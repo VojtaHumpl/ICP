@@ -10,67 +10,123 @@
 
 #include "App.h"
 
+using namespace std;
 
 App::App() {
-	std::cout << "OpenCV: " << CV_VERSION << std::endl;
+	cout << "OpenCV: " << CV_VERSION << endl;
 }
 
 void App::init(void) {
-	//open first available camera
-	capture = cv::VideoCapture(cv::CAP_DSHOW);
+	video_capture = cv::VideoCapture(cv::CAP_MSMF);
 
 	//open video file
 	//capture = cv::VideoCapture("video.mkv");
 
-	if (!capture.isOpened()) {
-		std::cerr << "no source?" << std::endl;
+	if (!video_capture.isOpened()) {
+		cerr << "no source?" << endl;
 		exit(EXIT_FAILURE);
 	} else {
-		std::cout << "Source: " <<
-			": width=" << capture.get(cv::CAP_PROP_FRAME_WIDTH) <<
-			", height=" << capture.get(cv::CAP_PROP_FRAME_HEIGHT) << '\n';
+		cout << "Source: " <<
+			": width=" << video_capture.get(cv::CAP_PROP_FRAME_WIDTH) <<
+			", height=" << video_capture.get(cv::CAP_PROP_FRAME_HEIGHT) << '\n';
 	}
 }
 
 int App::run(void) {
 	cv::Mat frame, scene;
 
-	while (1) {
-		auto start = std::chrono::high_resolution_clock::now();
+	camera_thread = thread(&App::camera_thread_function, this);
+	processing_thread = thread(&App::processing_thread_function, this);
+	gui_thread = thread(&App::gui_thread_function, this);
 
-		capture.read(frame);
-		if (frame.empty()) {
-			std::cerr << "Cam disconnected? End of file?\n";
-			break;
-		}
-
-		// show grabbed frame
-		cv::imshow("grabbed", frame);
-
-		// analyze the image...
-		cv::Point2f center = find_object(frame);
-		//cv::Mat img_threshold = threshold(frame, 128.0, 128.0, 128.0, 255.0, 255.0, 255.0);
-
-		cv::Point2f center_normalized(center.x / frame.cols, center.y / frame.rows);
-
-		// make a copy and draw center
-		cv::Mat scene_cross;
-		frame.copyTo(scene_cross);
-		draw_cross_normalized(scene_cross, center_normalized, 30);
-		cv::imshow("scene", scene_cross);
-
-		auto end = std::chrono::high_resolution_clock::now();
-
-		std::chrono::duration<double> elapsed_milliseconds = end - start;
-		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_milliseconds).count();
-		std::cout << "Elapsed time: " << ms << "ms, " << "FPS: " << 1000.0/ms <<  std::endl;
-
-
-		if (cv::waitKey(1) == 27)
-			break;
-	}
+	camera_thread.join();
+	processing_thread.join();
+	gui_thread.join();
 
 	return EXIT_SUCCESS;
+}
+
+void App::camera_thread_function() {
+	cv::Mat frame;
+
+    while (!stop_signal) {
+		auto start = chrono::high_resolution_clock::now();
+
+        video_capture.read(frame);
+        if (frame.empty()) {
+            cerr << "Camera disconnected or end of stream.\n";
+            stop_signal = true;
+            break;
+        }
+        frame_queue.push(frame);
+
+		display_queue.push(make_tuple(frame, "Original Frame"));
+
+		auto end = chrono::high_resolution_clock::now();
+		chrono::duration<double> elapsed_microseconds = end - start;
+		auto ms = chrono::duration_cast<chrono::microseconds>(elapsed_microseconds).count() / 1000.0;
+		cout << "Elapsed time capturing: " << ms << "ms, " << "FPS: " << 1000.0 / ms << endl;
+    
+		if (cv::pollKey() == 27) {
+			stop_signal = true;
+			break;
+		}
+	}
+}
+
+void App::processing_thread_function() {
+	cv::Mat frame;
+
+	while (!stop_signal) {
+		if (frame_queue.pop(frame)) {
+			if (frame.empty()) {
+				continue;
+			}
+
+			auto start = chrono::high_resolution_clock::now();
+
+			cv::Point2f center = find_object(frame);
+			cv::Point2f center_normalized(center.x / frame.cols, center.y / frame.rows);
+
+			cv::Mat scene_cross;
+			frame.copyTo(scene_cross);
+			draw_cross_normalized(scene_cross, center_normalized, 30);
+
+			display_queue.push(make_tuple(scene_cross, "Processed Frame"));
+
+			auto end = chrono::high_resolution_clock::now();
+			chrono::duration<double> elapsed_microseconds = end - start;
+			auto ms = chrono::duration_cast<chrono::microseconds>(elapsed_microseconds).count() / 1000.0;
+			cout << "Elapsed time processing: " << ms << "ms, " << "FPS: " << 1000.0 / ms << endl;
+
+			if (cv::pollKey() == 27) {
+				stop_signal = true;
+				break;
+			}
+		}
+	}
+}
+
+void App::gui_thread_function() {
+	cv::Mat frame;
+	tuple<cv::Mat, string> display;
+
+	while (!stop_signal) {
+		if (display_queue.pop(display)) {
+			frame = get<0>(display);
+			string window_name = get<1>(display);
+			if (frame.empty()) {
+				continue;
+			}
+
+			cv::imshow(window_name, frame);
+
+			if (cv::pollKey() == 27) {
+				stop_signal = true;
+				break;
+			}
+		}
+	}
 }
 
 cv::Mat App::threshold(const cv::Mat& img, const double h_low, const double s_low, const double v_low, const double h_hi, const double s_hi, const double v_hi) {
@@ -97,8 +153,8 @@ cv::Point2f App::find_object(const cv::Mat& img) {
     cv::bitwise_or(img_threshold1, img_threshold2, img_threshold);
 
 	// find contours
-	std::vector<std::vector<cv::Point>> contours;
-	std::vector<cv::Vec4i> hierarchy;
+	vector<vector<cv::Point>> contours;
+	vector<cv::Vec4i> hierarchy;
 	cv::findContours(img_threshold, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
 	// find the largest contour
@@ -137,9 +193,9 @@ void App::draw_cross(cv::Mat& img, int x, int y, int size) {
 }
 
 void App::draw_cross_normalized(cv::Mat& img, cv::Point2f center_normalized, int size) {
-	center_normalized.x = std::clamp(center_normalized.x, 0.0f, 1.0f);
-	center_normalized.y = std::clamp(center_normalized.y, 0.0f, 1.0f);
-	size = std::clamp(size, 1, std::min(img.cols, img.rows));
+	center_normalized.x = clamp(center_normalized.x, 0.0f, 1.0f);
+	center_normalized.y = clamp(center_normalized.y, 0.0f, 1.0f);
+	size = clamp(size, 1, min(img.cols, img.rows));
 
 	cv::Point2f center_absolute(center_normalized.x * img.cols, center_normalized.y * img.rows);
 
@@ -147,12 +203,15 @@ void App::draw_cross_normalized(cv::Mat& img, cv::Point2f center_normalized, int
 }
 
 App::~App() {
-	// clean-up
-	cv::destroyAllWindows();
-	std::cout << "Bye...\n";
+	stop_signal = true;
+	frame_queue.clear();
 
-	if (capture.isOpened())
-		capture.release();
+	cv::destroyAllWindows();
+
+	if (video_capture.isOpened())
+		video_capture.release();
+
+	cout << "Application exited cleanly.\n";
 }
 
 
