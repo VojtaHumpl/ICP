@@ -1,47 +1,55 @@
-﻿// icp.cpp 
-// Author: Vojtěch Humpl & David Jansa
-
-// C++ 
-#include <iostream>
-#include <chrono>
-#include <stack>
-#include <random>
-#include <numeric>
+﻿// Author: Vojtěch Humpl & David Jansa
 
 #include "App.h"
 
 using namespace std;
 
-App::App() {
+#include <thread>
+
+App::App() : thread_pool(std::thread::hardware_concurrency()) {
 	cout << "OpenCV: " << CV_VERSION << endl;
 }
 
 void App::init(void) {
-	video_capture = cv::VideoCapture(cv::CAP_MSMF);
+	try {
+		//open video file
+		//video_capture = cv::VideoCapture("resources/video.mkv");
 
-	//open video file
-	//capture = cv::VideoCapture("video.mkv");
+		video_capture = cv::VideoCapture(0, cv::CAP_MSMF);
+		if (!video_capture.isOpened()) {
+			throw runtime_error("Can not open camera");
+		} else {
+			cout << "Source: " <<
+				": width=" << video_capture.get(cv::CAP_PROP_FRAME_WIDTH) <<
+				", height=" << video_capture.get(cv::CAP_PROP_FRAME_HEIGHT) << '\n';
+		}
 
-	if (!video_capture.isOpened()) {
-		cerr << "no source?" << endl;
-		exit(EXIT_FAILURE);
-	} else {
-		cout << "Source: " <<
-			": width=" << video_capture.get(cv::CAP_PROP_FRAME_WIDTH) <<
-			", height=" << video_capture.get(cv::CAP_PROP_FRAME_HEIGHT) << '\n';
+		thread_pool.enqueue(&App::camera_thread_function, this);
+		thread_pool.enqueue(&App::processing_thread_function, this);
+		thread_pool.enqueue(&App::gui_thread_function, this);
+		thread_pool.enqueue(&App::encode_threaded_function, this);
+	} catch (const exception& e) {
+		cerr << "Init failed: " << e.what() << endl;
+		throw;
 	}
+
+	cout << "Application initialized.\n";
 }
 
 int App::run(void) {
 	cv::Mat frame, scene;
 
-	camera_thread = thread(&App::camera_thread_function, this);
-	processing_thread = thread(&App::processing_thread_function, this);
-	gui_thread = thread(&App::gui_thread_function, this);
+	//camera_thread = thread(&App::camera_thread_function, this);
+	//processing_thread = thread(&App::processing_thread_function, this);
+	//gui_thread = thread(&App::gui_thread_function, this);
+	//
+	//camera_thread.join();
+	//processing_thread.join();
+	//gui_thread.join();
 
-	camera_thread.join();
-	processing_thread.join();
-	gui_thread.join();
+	while (!stop_signal) {
+		this_thread::sleep_for(chrono::milliseconds(100));
+	}
 
 	return EXIT_SUCCESS;
 }
@@ -53,7 +61,7 @@ void App::camera_thread_function() {
 		auto start = chrono::high_resolution_clock::now();
 
         video_capture.read(frame);
-        if (frame.empty()) {
+        if (frame.empty() && display_queue.empty()) {
             cerr << "Camera disconnected or end of stream.\n";
             stop_signal = true;
             break;
@@ -61,15 +69,38 @@ void App::camera_thread_function() {
         frame_queue.push(frame);
 
 		display_queue.push(make_tuple(frame, "Original Frame"));
+		encode_queue.push(frame);
 
 		auto end = chrono::high_resolution_clock::now();
 		chrono::duration<double> elapsed_microseconds = end - start;
 		auto ms = chrono::duration_cast<chrono::microseconds>(elapsed_microseconds).count() / 1000.0;
 		cout << "Elapsed time capturing: " << ms << "ms, " << "FPS: " << 1000.0 / ms << endl;
-    
-		if (cv::pollKey() == 27) {
-			stop_signal = true;
-			break;
+	}
+}
+
+void App::encode_threaded_function() {
+	cv::Mat frame;
+
+	float target_coefficient = 0.5f;
+	while (!stop_signal) {
+		if (encode_queue.pop(frame)) {
+			if (frame.empty()) {
+				continue;
+			}
+
+			auto start = chrono::high_resolution_clock::now();
+
+			auto size_uncompressed = frame.elemSize() * frame.total();
+			auto size_compressed_limit = size_uncompressed * target_coefficient;
+			vector<uchar> bytes = lossy_bw_limit(frame, size_compressed_limit);
+			//vector<uchar> bytes = lossy_quality_limit(frame, 30.0f);
+
+			decode_queue.push(bytes);
+
+			auto end = chrono::high_resolution_clock::now();
+			chrono::duration<double> elapsed_microseconds = end - start;
+			auto ms = chrono::duration_cast<chrono::microseconds>(elapsed_microseconds).count() / 1000.0;
+			cout << "Elapsed time encoding: " << ms << "ms, " << "FPS: " << 1000.0 / ms << endl;
 		}
 	}
 }
@@ -98,11 +129,6 @@ void App::processing_thread_function() {
 			chrono::duration<double> elapsed_microseconds = end - start;
 			auto ms = chrono::duration_cast<chrono::microseconds>(elapsed_microseconds).count() / 1000.0;
 			cout << "Elapsed time processing: " << ms << "ms, " << "FPS: " << 1000.0 / ms << endl;
-
-			if (cv::pollKey() == 27) {
-				stop_signal = true;
-				break;
-			}
 		}
 	}
 }
@@ -110,6 +136,7 @@ void App::processing_thread_function() {
 void App::gui_thread_function() {
 	cv::Mat frame;
 	tuple<cv::Mat, string> display;
+	//int target_fps = 15;
 
 	while (!stop_signal) {
 		if (display_queue.pop(display)) {
@@ -125,8 +152,98 @@ void App::gui_thread_function() {
 				stop_signal = true;
 				break;
 			}
+
+			//int ms_per_frame = 1000.0 / target_fps;
+			//int key = cv::waitKey(ms_per_frame);
 		}
 	}
+}
+
+vector<uchar> App::lossy_bw_limit(cv::Mat& input_img, size_t size_limit) {
+	std::string suff(".jpg"); // target format
+	if (!cv::haveImageWriter(suff))
+		throw std::runtime_error("Can not compress to format:" + suff);
+
+	std::vector<uchar> bytes;
+	std::vector<int> compression_params;
+
+	// prepare parameters for JPEG compressor
+	// we use only quality, but other parameters are available (progressive, optimization...)
+	std::vector<int> compression_params_template;
+	compression_params_template.push_back(cv::IMWRITE_JPEG_QUALITY);
+
+	std::cout << '[';
+
+	//try step-by-step to decrease quality by 5%, until it fits into limit
+	for (auto i = 100; i > 0; i -= 5) {
+		compression_params = compression_params_template; // reset parameters
+		compression_params.push_back(i);                  // set desired quality
+		std::cout << i << ',';
+
+		// try to encode
+		cv::imencode(suff, input_img, bytes, compression_params);
+
+		// check the size limit
+		if (bytes.size() <= size_limit)
+			break; // ok, done 
+	}
+	std::cout << "]\n";
+
+	return bytes;
+}
+
+vector<uchar> App::lossy_quality_limit(cv::Mat& input_img, float target_quality) {
+	std::string suff(".jpg"); // Target format
+    if (!cv::haveImageWriter(suff))
+        throw std::runtime_error("Cannot compress to format: " + suff);
+
+	std::vector<int> compression_params = { cv::IMWRITE_JPEG_QUALITY, 95 };
+
+    std::vector<uchar> best_bytes;
+    int best_quality = -1;
+
+	std::vector<int> qualities(100);
+	std::iota(qualities.begin(), qualities.end(), 1);
+
+	std::vector<std::future<void>> futures;
+	std::mutex mtx;
+
+	auto compress_and_evaluate_task = [&](int quality) {
+		std::vector<uchar> bytes;
+		std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, quality };
+		cv::imencode(suff, input_img, bytes, params);
+
+		cv::Mat decoded_img = cv::imdecode(bytes, cv::IMREAD_COLOR);
+
+		// Compute PSNR between the original and compressed images
+		double psnr = cv::PSNR(input_img, decoded_img);
+
+		std::cout << "Quality: " << quality << ", PSNR: " << psnr << std::endl;
+
+		// Update best quality if criteria met
+		if (psnr >= target_quality) {
+			std::lock_guard<std::mutex> lock(mtx);
+			if (best_quality == -1 || quality < best_quality) {
+				best_quality = quality;
+				best_bytes = std::move(bytes); // Save the best compressed image
+			}
+		}
+	};
+
+	for (int quality : qualities) {
+		futures.emplace_back(thread_pool.enqueue(compress_and_evaluate_task, quality));
+	}
+
+	for (auto& future : futures) {
+		future.get();
+	}
+
+	if (best_quality == -1) {
+		throw std::runtime_error("Cannot achieve target PSNR with available quality settings.");
+	}
+
+	std::cout << "Selected Quality: " << best_quality << std::endl;
+	return best_bytes;
 }
 
 cv::Mat App::threshold(const cv::Mat& img, const double h_low, const double s_low, const double v_low, const double h_hi, const double s_hi, const double v_hi) {
@@ -205,6 +322,9 @@ void App::draw_cross_normalized(cv::Mat& img, cv::Point2f center_normalized, int
 App::~App() {
 	stop_signal = true;
 	frame_queue.clear();
+	display_queue.clear();
+	encode_queue.clear();
+	decode_queue.clear();
 
 	cv::destroyAllWindows();
 

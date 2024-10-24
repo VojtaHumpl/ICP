@@ -1,12 +1,18 @@
 #pragma once
 
+#include <iostream>
+#include <chrono>
 #include <thread>
 #include <tuple>
+#include <vector>
+#include <numeric>
+#include <future>
 
 // OpenCV 
 #include <opencv2\opencv.hpp>
 
 #include "ThreadSafeQueue.h"
+#include "ThreadPool.h"
 
 class App {
 public:
@@ -21,17 +27,25 @@ private:
 	void draw_cross_normalized(cv::Mat& img, const cv::Point2f center_normalized, const int size);
 	cv::Point2f find_object(const cv::Mat& img);
 	cv::Mat threshold(const cv::Mat& img, const double h_low, const double s_low, const double v_low, const double h_hi, const double s_hi, const double v_hi);
+	std::vector<uchar> lossy_bw_limit(cv::Mat& input_img, size_t size_limit);
+	std::vector<uchar> lossy_quality_limit(cv::Mat& input_img, float target_quality);
 
 	void camera_thread_function();
 	void processing_thread_function();
 	void gui_thread_function();
+	void encode_threaded_function();
+	void decode_thread_function();
 
 	cv::VideoCapture video_capture;
 	ThreadSafeQueue<cv::Mat> frame_queue;
 	ThreadSafeQueue<std::tuple<cv::Mat, std::string>> display_queue;
+	ThreadSafeQueue<cv::Mat> encode_queue;
+	ThreadSafeQueue<std::vector<uchar>> decode_queue;
 
-	std::thread gui_thread;
-	std::thread camera_thread;
-	std::thread processing_thread;
+	// Threads
+    ThreadPool thread_pool;
+	//std::thread gui_thread;
+	//std::thread camera_thread;
+	//std::thread processing_thread;
 	bool stop_signal = false;
 };

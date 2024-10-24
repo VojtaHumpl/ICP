@@ -24,7 +24,7 @@ public:
 		std::unique_lock<std::mutex> lock(mutex_);
 		cond_var_.wait(lock, [this] { return !queue_.empty(); });
 		if (queue_.empty())
-			return false; // In case of spurious wakeup
+			return false;
 
 		item = queue_.front();
 		queue_.pop();
