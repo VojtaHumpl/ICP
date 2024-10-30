@@ -1,5 +1,33 @@
 ﻿// Author: Vojtěch Humpl & David Jansa
 
+// WARNING:
+////// In general, you can NOT freely reorder includes!
+//
+
+// C++
+// include anywhere, in any order
+#include <iostream>
+#include <chrono>
+#include <stack>
+#include <random>
+
+// OpenCV (does not depend on GL)
+#include <opencv2\opencv.hpp>
+
+// OpenGL Extension Wrangler: allow all multiplatform GL functions
+#include <GL/glew.h> 
+// WGLEW = Windows GL Extension Wrangler (change for different platform) 
+// platform specific functions (in this case Windows)
+#include <GL/wglew.h> 
+
+// GLFW toolkit
+// Uses GL calls to open GL context, i.e. GLEW __MUST__ be first.
+#include <GLFW/glfw3.h>
+
+// OpenGL math (and other additional GL libraries, at the end)
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+////// In general, you can NOT freely reorder includes!
 #include "App.h"
 
 using namespace std;
