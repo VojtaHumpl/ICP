@@ -86,12 +86,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ExecutablePath>$(OPENCV_DIR)\x64\vc16\bin;$(VC_ExecutablePath_x64);$(CommonExecutablePath);$(ProjectDir)bin</ExecutablePath>
+    <ExecutablePath>$(OPENCV_DIR)\x64\vc16\bin;$(VC_ExecutablePath_x64);$(CommonExecutablePath);$(ProjectDir)exbin</ExecutablePath>
     <IncludePath>$(OPENCV_DIR)\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)include</IncludePath>
     <LibraryPath>$(OPENCV_DIR)\x64\vc16\bin;$(OPENCV_DIR)\x64\vc16\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(ProjectDir)lib</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ExecutablePath>$(OPENCV_DIR)\x64\vc16\bin;$(VC_ExecutablePath_x64);$(CommonExecutablePath);$(ProjectDir)bin</ExecutablePath>
+    <ExecutablePath>$(OPENCV_DIR)\x64\vc16\bin;$(VC_ExecutablePath_x64);$(CommonExecutablePath);$(ProjectDir)exbin</ExecutablePath>
     <IncludePath>$(OPENCV_DIR)\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)include</IncludePath>
     <LibraryPath>$(OPENCV_DIR)\x64\vc16\bin;$(OPENCV_DIR)\x64\vc16\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(ProjectDir)lib</LibraryPath>
   </PropertyGroup>

@@ -45,7 +45,7 @@ void App::init(void) {
 
 		video_capture = cv::VideoCapture(0, cv::CAP_MSMF);
 		if (!video_capture.isOpened()) {
-			throw runtime_error("Can not open camera");
+			//throw runtime_error("Can not open camera");
 		} else {
 			cout << "Source: " <<
 				": width=" << video_capture.get(cv::CAP_PROP_FRAME_WIDTH) <<
@@ -65,6 +65,20 @@ void App::init(void) {
 }
 
 int App::run(void) {
+	GLFWwindow* window;
+
+	/* Initialize the library */
+	if (!glfwInit())
+		return -1;
+
+	/* Create a windowed mode window and its OpenGL context */
+	window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+	if (!window)
+	{
+		glfwTerminate();
+		return -1;
+	}
+
 	cv::Mat frame, scene;
 
 	//camera_thread = thread(&App::camera_thread_function, this);
