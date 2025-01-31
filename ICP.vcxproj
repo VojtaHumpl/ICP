@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -20,9 +20,24 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
+    <ClCompile Include="callbacks.cpp" />
+    <ClCompile Include="imgui-docking\backends\imgui_impl_glfw.cpp" />
+    <ClCompile Include="imgui-docking\backends\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="imgui-docking\imgui.cpp" />
+    <ClCompile Include="imgui-docking\imgui_demo.cpp" />
+    <ClCompile Include="imgui-docking\imgui_draw.cpp" />
+    <ClCompile Include="imgui-docking\imgui_tables.cpp" />
+    <ClCompile Include="imgui-docking\imgui_widgets.cpp" />
+    <ClCompile Include="imgui-docking\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ShaderProgram.cpp" />
+    <ClCompile Include="stb_image_impl.cpp" />
+    <ClCompile Include="tiny_obj_loader_impl.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="imgui-docking\misc\debuggers\imgui.natstepfilter" />
+    <None Include="modelFS.glsl" />
+    <None Include="modelVS.glsl" />
     <None Include="resources\video.mkv" />
   </ItemGroup>
   <ItemGroup>
@@ -30,8 +45,28 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
+    <ClInclude Include="Assets.h" />
+    <ClInclude Include="imgui-docking\backends\imgui_impl_glfw.h" />
+    <ClInclude Include="imgui-docking\backends\imgui_impl_opengl3.h" />
+    <ClInclude Include="imgui-docking\backends\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="imgui-docking\imconfig.h" />
+    <ClInclude Include="imgui-docking\imgui.h" />
+    <ClInclude Include="imgui-docking\imgui_internal.h" />
+    <ClInclude Include="imgui-docking\imstb_rectpack.h" />
+    <ClInclude Include="imgui-docking\imstb_textedit.h" />
+    <ClInclude Include="imgui-docking\imstb_truetype.h" />
+    <ClInclude Include="imgui-docking\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Model.h" />
+    <ClInclude Include="ShaderProgram.h" />
+    <ClInclude Include="stb_image.h" />
     <ClInclude Include="ThreadPool.h" />
     <ClInclude Include="ThreadSafeQueue.h" />
+    <ClInclude Include="tiny_obj_loader.h" />
+    <ClInclude Include="Vertex.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="imgui-docking\misc\debuggers\imgui.natvis" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -86,13 +121,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ExecutablePath>$(OPENCV_DIR)\x64\vc16\bin;$(VC_ExecutablePath_x64);$(CommonExecutablePath);$(ProjectDir)exbin</ExecutablePath>
-    <IncludePath>$(OPENCV_DIR)\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)include</IncludePath>
+    <ExecutablePath>$(OPENCV_DIR)\x64\vc16\bin;$(VC_ExecutablePath_x64);$(CommonExecutablePath);$(ProjectDir)bin</ExecutablePath>
+    <IncludePath>$(OPENCV_DIR)\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)include;$(ProjectDir)/imgui-docking</IncludePath>
     <LibraryPath>$(OPENCV_DIR)\x64\vc16\bin;$(OPENCV_DIR)\x64\vc16\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(ProjectDir)lib</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ExecutablePath>$(OPENCV_DIR)\x64\vc16\bin;$(VC_ExecutablePath_x64);$(CommonExecutablePath);$(ProjectDir)exbin</ExecutablePath>
-    <IncludePath>$(OPENCV_DIR)\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)include</IncludePath>
+    <ExecutablePath>$(OPENCV_DIR)\x64\vc16\bin;$(VC_ExecutablePath_x64);$(CommonExecutablePath);$(ProjectDir)bin</ExecutablePath>
+    <IncludePath>$(OPENCV_DIR)\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)include;$(ProjectDir)/imgui-docking</IncludePath>
     <LibraryPath>$(OPENCV_DIR)\x64\vc16\bin;$(OPENCV_DIR)\x64\vc16\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(ProjectDir)lib</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -146,7 +181,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>

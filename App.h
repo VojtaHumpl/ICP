@@ -7,45 +7,94 @@
 #include <vector>
 #include <numeric>
 #include <future>
+#include <filesystem>
 
 // OpenCV 
 #include <opencv2\opencv.hpp>
 
+#include <GL/glew.h> 
+#include <GL/wglew.h> 
+
+// GLFW toolkit
+#include <GLFW/glfw3.h>
+
+// OpenGL math
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+
 #include "ThreadSafeQueue.h"
 #include "ThreadPool.h"
+#include "Assets.h"
+#include "ShaderProgram.h"
+#include "Model.h"
+
 
 class App {
 public:
 	App();
 	~App();
 
-	void init(void);
-	int run(void);
+	void init();
+	void initImgui();
+	int run();
+	void destroy();
 
 private:
-	void draw_cross(cv::Mat& img, int x, int y, int size);
-	void draw_cross_normalized(cv::Mat& img, const cv::Point2f center_normalized, const int size);
-	cv::Point2f find_object(const cv::Mat& img);
+	// OpenGL
+	GLFWwindow* window = nullptr;
+	int windowWidth = 1280;
+	int windowHeight = 720;
+	bool isVsyncOn = true;
+	bool showImgui = true;
+
+	std::vector<Model> models;
+	std::vector<ShaderProgram> shaders;
+
+	cv::VideoCapture videoCapture;
+	ThreadSafeQueue<cv::Mat> frameQueue;
+	ThreadSafeQueue<std::tuple<cv::Mat, std::string>> displayQueue;
+	ThreadSafeQueue<cv::Mat> encodeQueue;
+	ThreadSafeQueue<std::vector<uchar>> decodeQueue;
+
+	// Threading
+	ThreadPool threadPool;
+	bool stopSignal = false;
+
+	// Init
+	void initOpenCV();
+	void initGLEW();
+	void initGLFW();
+	void initGLDebug();
+	void initAssets();
+
+	void printInfoOpenCV();
+	void printInfoGLFW();
+	void printInfoGLM();
+	void printInfoGL();
+
+	void drawCross(cv::Mat& img, int x, int y, int size);
+	void drawCrossNormalized(cv::Mat& img, const cv::Point2f center_normalized, const int size);
+	cv::Point2f findObject(const cv::Mat& img);
 	cv::Mat threshold(const cv::Mat& img, const double h_low, const double s_low, const double v_low, const double h_hi, const double s_hi, const double v_hi);
-	std::vector<uchar> lossy_bw_limit(cv::Mat& input_img, size_t size_limit);
-	std::vector<uchar> lossy_quality_limit(cv::Mat& input_img, float target_quality);
+	std::vector<uchar> lossyLimitBW(cv::Mat& input_img, size_t size_limit);
+	std::vector<uchar> lossyLimitQuality(cv::Mat& input_img, float target_quality);
 
-	void camera_thread_function();
-	void processing_thread_function();
-	void gui_thread_function();
-	void encode_threaded_function();
-	void decode_thread_function();
+	void cameraThreadFunction();
+	void processingThreadFunction();
+	void GUIThreadFunction();
+	void encodeThreadFunction();
+	void decodeThreadFunction();
 
-	cv::VideoCapture video_capture;
-	ThreadSafeQueue<cv::Mat> frame_queue;
-	ThreadSafeQueue<std::tuple<cv::Mat, std::string>> display_queue;
-	ThreadSafeQueue<cv::Mat> encode_queue;
-	ThreadSafeQueue<std::vector<uchar>> decode_queue;
-
-	// Threads
-    ThreadPool thread_pool;
-	//std::thread gui_thread;
-	//std::thread camera_thread;
-	//std::thread processing_thread;
-	bool stop_signal = false;
+	
+	//callbacks
+	static void GLFWErrorCallback(int error, const char* description);
+	static void GLFWFramebufferSizeCallback(GLFWwindow* window, int width, int height);
+	static void GLFWMouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+	static void GLFWKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+	static void GLFWScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+	static void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
 };

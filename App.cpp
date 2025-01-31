@@ -1,117 +1,281 @@
 ﻿// Author: Vojtěch Humpl & David Jansa
 
-// WARNING:
-////// In general, you can NOT freely reorder includes!
-//
 
-// C++
-// include anywhere, in any order
-#include <iostream>
-#include <chrono>
-#include <stack>
-#include <random>
-
-// OpenCV (does not depend on GL)
-#include <opencv2\opencv.hpp>
-
-// OpenGL Extension Wrangler: allow all multiplatform GL functions
-#include <GL/glew.h> 
-// WGLEW = Windows GL Extension Wrangler (change for different platform) 
-// platform specific functions (in this case Windows)
-#include <GL/wglew.h> 
-
-// GLFW toolkit
-// Uses GL calls to open GL context, i.e. GLEW __MUST__ be first.
-#include <GLFW/glfw3.h>
-
-// OpenGL math (and other additional GL libraries, at the end)
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
-////// In general, you can NOT freely reorder includes!
 #include "App.h"
 
 using namespace std;
 
-#include <thread>
 
-App::App() : thread_pool(std::thread::hardware_concurrency()) {
-	cout << "OpenCV: " << CV_VERSION << endl;
+App::App() : threadPool(std::thread::hardware_concurrency()) {
+	//cout << "OpenCV: " << CV_VERSION << endl;
 }
 
 void App::init(void) {
 	try {
-		//open video file
-		//video_capture = cv::VideoCapture("resources/video.mkv");
+		std::cout << "Current working directory: " << std::filesystem::current_path().generic_string() << '\n';
 
-		video_capture = cv::VideoCapture(0, cv::CAP_MSMF);
-		if (!video_capture.isOpened()) {
-			//throw runtime_error("Can not open camera");
-		} else {
-			cout << "Source: " <<
-				": width=" << video_capture.get(cv::CAP_PROP_FRAME_WIDTH) <<
-				", height=" << video_capture.get(cv::CAP_PROP_FRAME_HEIGHT) << '\n';
-		}
+		if (!std::filesystem::exists("bin"))
+			throw std::runtime_error("Directory 'bin' not found. DLLs are expected to be there.");
 
-		thread_pool.enqueue(&App::camera_thread_function, this);
-		thread_pool.enqueue(&App::processing_thread_function, this);
-		thread_pool.enqueue(&App::gui_thread_function, this);
-		thread_pool.enqueue(&App::encode_threaded_function, this);
+		if (!std::filesystem::exists("resources"))
+			throw std::runtime_error("Directory 'resources' not found. Various media files are expected to be there.");
+
+		initOpenCV();
+		initGLFW();
+		initGLEW();
+
+		initGLDebug();
+
+		printInfoOpenCV();
+		printInfoGLFW();
+		printInfoGL();
+		printInfoGLM();
+
+		glfwSwapInterval(isVsyncOn ? 1 : 0);	// Enable/disable VSync
+
+		//initTestTriangle();
+		initAssets();
+
+		glfwShowWindow(window);
+
+		initImgui();
+
 	} catch (const exception& e) {
-		cerr << "Init failed: " << e.what() << endl;
+		cerr << "Initialization failed: " << e.what() << endl;
 		throw;
 	}
 
 	cout << "Application initialized.\n";
 }
 
+void App::initOpenCV() {
+	cout << "OpenCV: " << CV_VERSION << endl;
+
+	try {
+		//open video file
+		//videoCapture = cv::VideoCapture("resources/video.mkv");
+
+		videoCapture = cv::VideoCapture(0, cv::CAP_MSMF);
+		if (!videoCapture.isOpened()) {
+			//throw runtime_error("Can not open camera");
+		}
+
+		//threadPool.enqueue(&App::cameraThreadFunction, this);
+		//threadPool.enqueue(&App::processingThreadFunction, this);
+		//threadPool.enqueue(&App::GUIThreadFunction, this);
+		//threadPool.enqueue(&App::encodeThreadFunction, this);
+	} catch (const exception& e) {
+		cerr << "OpenCV init failed: " << e.what() << endl;
+		throw;
+	}
+}
+
+void App::initGLEW() {
+	GLenum glew_ret;
+	glew_ret = glewInit();
+
+	if (glew_ret != GLEW_OK) {
+		throw std::runtime_error(std::string("GLEW failed with error: ") + reinterpret_cast<const char*>(glewGetErrorString(glew_ret)));
+	} else {
+		std::cout << "GLEW: " << glewGetString(GLEW_VERSION) << std::endl;
+	}
+
+	GLenum wglew_ret = wglewInit();
+	if (wglew_ret != GLEW_OK) {
+		throw std::runtime_error(std::string("WGLEW failed with error: ") + reinterpret_cast<const char*>(glewGetErrorString(wglew_ret)));
+	} else {
+		std::cout << "WGLEW successfully initialized platform specific functions.\n";
+	}
+
+	if (!GLEW_ARB_direct_state_access)
+		throw std::runtime_error("No DSA :-(");
+}
+
+void App::initGLFW() {
+	glfwSetErrorCallback(GLFWErrorCallback);
+
+	if (!glfwInit()) {
+		throw std::runtime_error("GLFW failed to initialize.");
+	}
+
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+	glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+
+	window = glfwCreateWindow(windowWidth, windowHeight, "ICP", nullptr, nullptr);
+	if (!window) {
+		throw std::runtime_error("GLFW window can not be created.");
+	}
+
+	glfwSetWindowUserPointer(window, this);
+
+	glfwMakeContextCurrent(window);
+
+	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	glfwSetFramebufferSizeCallback(window, GLFWFramebufferSizeCallback);
+	glfwSetMouseButtonCallback(window, GLFWMouseButtonCallback);
+	glfwSetKeyCallback(window, GLFWKeyCallback);
+	glfwSetScrollCallback(window, GLFWScrollCallback);
+}
+
+void App::initGLDebug() {
+	if (GLEW_ARB_debug_output) {
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+		glDebugMessageCallbackARB(MessageCallback, nullptr);
+		glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+	} else {
+		std::cerr << "OpenGL debug output not supported.\n";
+	}
+}
+
+void App::initImgui() {
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init();
+	std::cout << "ImGUI version: " << ImGui::GetVersion() << "\n";
+}
+
+void App::initAssets() {
+
+	ShaderProgram modelShader("modelVS.glsl", "modelFS.glsl");
+	shaders.push_back(std::move(modelShader));
+
+	Model testModel("resources/sub.obj", shaders[0], true);
+	testModel.origin = glm::vec3(0.0f, 0.0f, 0.0f);
+	testModel.orientation = glm::vec3(0.0f, 0.0f, 0.0f);
+
+	/*std::vector<Vertex> triVertices = {
+	{{-0.5f, -0.5f, 0.0f}, {}, {}}, 
+	{{ 0.5f, -0.5f, 0.0f}, {}, {}},
+	{{ 0.0f,  0.5f, 0.0f}, {}, {}}
+	};
+	std::vector<GLuint> triIndices = { 0, 1, 2 };
+
+	//Model testModel(triVertices, triIndices, modelShader);*/
+
+	//Model testModel(triVertices, triIndices, shaders[0]);
+	//testModel.origin = glm::vec3(0.0f, 0.0f, -2.0f);
+	//testModel.meshes[0].primitive_type = GL_TRIANGLES;
+	models.push_back(std::move(testModel));
+}
+
 int App::run(void) {
-	cv::Mat frame, scene;
+	glEnable(GL_DEPTH_TEST);
+	//glDisable(GL_DEPTH_TEST);
+	//glDisable(GL_CULL_FACE);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	//camera_thread = thread(&App::camera_thread_function, this);
-	//processing_thread = thread(&App::processing_thread_function, this);
-	//gui_thread = thread(&App::gui_thread_function, this);
-	//
-	//camera_thread.join();
-	//processing_thread.join();
-	//gui_thread.join();
+	double lastFrameTime = glfwGetTime();
+	double fps_last_displayed = lastFrameTime;
+	int fps_counter_frames = 0;
+	double FPS = 0.0;
 
-	while (!stop_signal) {
-		this_thread::sleep_for(chrono::milliseconds(100));
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+
+	while (!glfwWindowShouldClose(window)) {
+		if (showImgui) {
+			ImGui_ImplOpenGL3_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			ImGui::NewFrame();
+			//ImGui::ShowDemoWindow(); // Enable mouse when using Demo!
+			ImGui::SetNextWindowPos(ImVec2(10, 10));
+			ImGui::SetNextWindowSize(ImVec2(250, 100));
+
+			ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+			ImGui::Text("V-Sync: %s", isVsyncOn ? "ON" : "OFF");
+			ImGui::Text("FPS: %.1f", FPS);
+			ImGui::Text("(press RMB to release mouse)");
+			ImGui::Text("(hit D to show/hide info)");
+			ImGui::End();
+		}
+
+		double time_speed = showImgui ? 0.0 : 1.0;
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glm::mat4 projection = glm::perspective(
+			glm::radians(90.0f),      // FOV
+			(float)windowWidth / (float)windowHeight,  // aspect ratio
+			0.01f, 100.0f             // near, far planes
+		);
+
+		glm::mat4 view = glm::lookAt(
+			glm::vec3(0, 10, 15),      // camera pos
+			glm::vec3(0, 0, 0),      // look at origin
+			glm::vec3(0, 1, 0)       // up direction
+		);
+
+		shaders[0].activate();
+		shaders[0].setUniform("projection", projection);
+		shaders[0].setUniform("view", view);
+
+		// RENDER: GL drawCalls
+
+		for (auto& model : models) {
+			model.draw();
+		}
+
+
+		if (showImgui) {
+			ImGui::Render();
+			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		}
+
+
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+
+		double now = glfwGetTime();
+		double delta_t = now - lastFrameTime;
+		lastFrameTime = now;
+
+		fps_counter_frames++;
+		if (now - fps_last_displayed >= 1.0) {
+			FPS = fps_counter_frames / (now - fps_last_displayed);
+			fps_last_displayed = now;
+			fps_counter_frames = 0;
+			std::cout << "\r[FPS] " << FPS << "     " << std::flush;
+		}
 	}
 
 	return EXIT_SUCCESS;
 }
 
-void App::camera_thread_function() {
+void App::cameraThreadFunction() {
 	cv::Mat frame;
 
-    while (!stop_signal) {
+    while (!stopSignal) {
 		auto start = chrono::high_resolution_clock::now();
 
-        video_capture.read(frame);
-        if (frame.empty() && display_queue.empty()) {
+        videoCapture.read(frame);
+        if (frame.empty() && displayQueue.empty()) {
             cerr << "Camera disconnected or end of stream.\n";
-            stop_signal = true;
+            stopSignal = true;
             break;
         }
-        frame_queue.push(frame);
+        frameQueue.push(frame);
 
-		display_queue.push(make_tuple(frame, "Original Frame"));
-		encode_queue.push(frame);
+		displayQueue.push(make_tuple(frame, "Original Frame"));
+		encodeQueue.push(frame);
 
 		auto end = chrono::high_resolution_clock::now();
 		chrono::duration<double> elapsed_microseconds = end - start;
 		auto ms = chrono::duration_cast<chrono::microseconds>(elapsed_microseconds).count() / 1000.0;
-		cout << "Elapsed time capturing: " << ms << "ms, " << "FPS: " << 1000.0 / ms << endl;
+		//cout << "Elapsed time capturing: " << ms << "ms, " << "FPS: " << 1000.0 / ms << endl;
 	}
 }
 
-void App::encode_threaded_function() {
+void App::encodeThreadFunction() {
 	cv::Mat frame;
 
 	float target_coefficient = 0.5f;
-	while (!stop_signal) {
-		if (encode_queue.pop(frame)) {
+	while (!stopSignal) {
+		if (encodeQueue.pop(frame)) {
 			if (frame.empty()) {
 				continue;
 			}
@@ -120,54 +284,73 @@ void App::encode_threaded_function() {
 
 			auto size_uncompressed = frame.elemSize() * frame.total();
 			auto size_compressed_limit = size_uncompressed * target_coefficient;
-			vector<uchar> bytes = lossy_bw_limit(frame, size_compressed_limit);
-			//vector<uchar> bytes = lossy_quality_limit(frame, 30.0f);
+			vector<uchar> bytes = lossyLimitBW(frame, size_compressed_limit);
+			//vector<uchar> bytes = lossyLimitQuality(frame, 30.0f);
 
-			decode_queue.push(bytes);
+			decodeQueue.push(bytes);
 
 			auto end = chrono::high_resolution_clock::now();
 			chrono::duration<double> elapsed_microseconds = end - start;
 			auto ms = chrono::duration_cast<chrono::microseconds>(elapsed_microseconds).count() / 1000.0;
-			cout << "Elapsed time encoding: " << ms << "ms, " << "FPS: " << 1000.0 / ms << endl;
+			//cout << "Elapsed time encoding: " << ms << "ms, " << "FPS: " << 1000.0 / ms << endl;
 		}
 	}
 }
 
-void App::processing_thread_function() {
+void App::processingThreadFunction() {
 	cv::Mat frame;
 
-	while (!stop_signal) {
-		if (frame_queue.pop(frame)) {
+	while (!stopSignal) {
+		if (frameQueue.pop(frame)) {
 			if (frame.empty()) {
 				continue;
 			}
 
 			auto start = chrono::high_resolution_clock::now();
 
-			cv::Point2f center = find_object(frame);
+			cv::Point2f center = findObject(frame);
 			cv::Point2f center_normalized(center.x / frame.cols, center.y / frame.rows);
 
 			cv::Mat scene_cross;
 			frame.copyTo(scene_cross);
-			draw_cross_normalized(scene_cross, center_normalized, 30);
+			drawCrossNormalized(scene_cross, center_normalized, 30);
 
-			display_queue.push(make_tuple(scene_cross, "Processed Frame"));
+			displayQueue.push(make_tuple(scene_cross, "Processed Frame"));
 
 			auto end = chrono::high_resolution_clock::now();
 			chrono::duration<double> elapsed_microseconds = end - start;
 			auto ms = chrono::duration_cast<chrono::microseconds>(elapsed_microseconds).count() / 1000.0;
-			cout << "Elapsed time processing: " << ms << "ms, " << "FPS: " << 1000.0 / ms << endl;
+			//cout << "Elapsed time processing: " << ms << "ms, " << "FPS: " << 1000.0 / ms << endl;
 		}
 	}
 }
 
-void App::gui_thread_function() {
+void App::GUIThreadFunction() {
+	if (!glfwInit()) {
+		std::cerr << "Failed to initialize GLFW\n";
+		stopSignal = true;
+		return;
+	}
+
+	GLFWwindow* window = glfwCreateWindow(640, 480, "OpenGL Window", NULL, NULL);
+	if (!window) {
+		std::cerr << "Failed to create GLFW window\n";
+		glfwTerminate();
+		stopSignal = true;
+		return;
+	}
+
+	glfwMakeContextCurrent(window);
+	glewExperimental = GL_TRUE;
+	glewInit();
+	glfwSwapInterval(1);
+
 	cv::Mat frame;
 	tuple<cv::Mat, string> display;
 	//int target_fps = 15;
 
-	while (!stop_signal) {
-		if (display_queue.pop(display)) {
+	while (!stopSignal) {
+		if (displayQueue.pop(display)) {
 			frame = get<0>(display);
 			string window_name = get<1>(display);
 			if (frame.empty()) {
@@ -177,7 +360,7 @@ void App::gui_thread_function() {
 			cv::imshow(window_name, frame);
 
 			if (cv::pollKey() == 27) {
-				stop_signal = true;
+				stopSignal = true;
 				break;
 			}
 
@@ -187,7 +370,7 @@ void App::gui_thread_function() {
 	}
 }
 
-vector<uchar> App::lossy_bw_limit(cv::Mat& input_img, size_t size_limit) {
+vector<uchar> App::lossyLimitBW(cv::Mat& input_img, size_t size_limit) {
 	std::string suff(".jpg"); // target format
 	if (!cv::haveImageWriter(suff))
 		throw std::runtime_error("Can not compress to format:" + suff);
@@ -220,7 +403,7 @@ vector<uchar> App::lossy_bw_limit(cv::Mat& input_img, size_t size_limit) {
 	return bytes;
 }
 
-vector<uchar> App::lossy_quality_limit(cv::Mat& input_img, float target_quality) {
+vector<uchar> App::lossyLimitQuality(cv::Mat& input_img, float target_quality) {
 	std::string suff(".jpg"); // Target format
     if (!cv::haveImageWriter(suff))
         throw std::runtime_error("Cannot compress to format: " + suff);
@@ -259,7 +442,7 @@ vector<uchar> App::lossy_quality_limit(cv::Mat& input_img, float target_quality)
 	};
 
 	for (int quality : qualities) {
-		futures.emplace_back(thread_pool.enqueue(compress_and_evaluate_task, quality));
+		futures.emplace_back(threadPool.enqueue(compress_and_evaluate_task, quality));
 	}
 
 	for (auto& future : futures) {
@@ -286,7 +469,7 @@ cv::Mat App::threshold(const cv::Mat& img, const double h_low, const double s_lo
 	return img_threshold;
 }
 
-cv::Point2f App::find_object(const cv::Mat& img) {
+cv::Point2f App::findObject(const cv::Mat& img) {
     // First range for red hue
     cv::Mat img_threshold1 = threshold(img, 0, 100, 100, 10, 255, 255);
 
@@ -327,7 +510,7 @@ cv::Point2f App::find_object(const cv::Mat& img) {
 	return center;
 }
 
-void App::draw_cross(cv::Mat& img, int x, int y, int size) {
+void App::drawCross(cv::Mat& img, int x, int y, int size) {
 	cv::Point p1(x - size / 2, y);
 	cv::Point p2(x + size / 2, y);
 	cv::Point p3(x, y - size / 2);
@@ -337,29 +520,121 @@ void App::draw_cross(cv::Mat& img, int x, int y, int size) {
 	cv::line(img, p3, p4, CV_RGB(255, 0, 0), 3);
 }
 
-void App::draw_cross_normalized(cv::Mat& img, cv::Point2f center_normalized, int size) {
+void App::drawCrossNormalized(cv::Mat& img, cv::Point2f center_normalized, int size) {
 	center_normalized.x = clamp(center_normalized.x, 0.0f, 1.0f);
 	center_normalized.y = clamp(center_normalized.y, 0.0f, 1.0f);
 	size = clamp(size, 1, min(img.cols, img.rows));
 
 	cv::Point2f center_absolute(center_normalized.x * img.cols, center_normalized.y * img.rows);
 
-	draw_cross(img, center_absolute.x, center_absolute.y, size);
+	drawCross(img, center_absolute.x, center_absolute.y, size);
+}
+
+void App::printInfoGLM() {
+	std::cout << "GLM version: " << GLM_VERSION_MAJOR << '.' << GLM_VERSION_MINOR << '.' << GLM_VERSION_PATCH << "rev" << GLM_VERSION_REVISION << std::endl;
+}
+
+void App::printInfoOpenCV() {
+	cout << " Capture source: " <<
+		": width=" << videoCapture.get(cv::CAP_PROP_FRAME_WIDTH) <<
+		", height=" << videoCapture.get(cv::CAP_PROP_FRAME_HEIGHT) << '\n';
+}
+
+void App::printInfoGLFW(void) {
+	int major, minor, revision;
+	glfwGetVersion(&major, &minor, &revision);
+	std::cout << "Running GLFW DLL " << major << '.' << minor << '.' << revision << '\n';
+	std::cout << "Compiled against GLFW "
+		<< GLFW_VERSION_MAJOR << '.' << GLFW_VERSION_MINOR << '.' << GLFW_VERSION_REVISION
+		<< '\n';
+}
+
+void App::printInfoGL() {
+	auto vendor_s = reinterpret_cast<const char*>(glGetString(GL_VENDOR));
+	std::cout << "OpenGL driver vendor: " << (vendor_s ? vendor_s : "UNKNOWN") << '\n';
+
+	auto renderer_s = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+	std::cout << "OpenGL renderer: " << (renderer_s ? renderer_s : "<UNKNOWN>") << '\n';
+
+	auto version_s = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+	std::cout << "OpenGL version: " << (version_s ? version_s : "<UNKNOWN>") << '\n';
+
+	auto glsl_s = reinterpret_cast<const char*>(glGetString(GL_SHADING_LANGUAGE_VERSION));
+	std::cout << "Primary GLSL shading language version: " << (glsl_s ? glsl_s : "<UNKNOWN>") << std::endl;
+
+	// get GL profile info
+	{
+		GLint profile_flags;
+		glGetIntegerv(GL_CONTEXT_PROFILE_MASK, &profile_flags);
+		std::cout << "Current profile: ";
+		if (profile_flags & GL_CONTEXT_CORE_PROFILE_BIT)
+			std::cout << "CORE";
+		else
+			std::cout << "COMPATIBILITY";
+		std::cout << std::endl;
+	}
+
+	// get context flags
+	{
+		GLint context_flags;
+		glGetIntegerv(GL_CONTEXT_FLAGS, &context_flags);
+		std::cout << "Active context flags: ";
+		if (context_flags & GL_CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT)
+			std::cout << "GL_CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT ";
+		if (context_flags & GL_CONTEXT_FLAG_DEBUG_BIT)
+			std::cout << "GL_CONTEXT_FLAG_DEBUG_BIT ";
+		if (context_flags & GL_CONTEXT_FLAG_ROBUST_ACCESS_BIT)
+			std::cout << "GL_CONTEXT_FLAG_ROBUST_ACCESS_BIT ";
+		if (context_flags & GL_CONTEXT_FLAG_NO_ERROR_BIT)
+			std::cout << "GL_CONTEXT_FLAG_NO_ERROR_BIT";
+		std::cout << std::endl;
+	}
+
+	{ // get extension list
+		GLint n = 0;
+		glGetIntegerv(GL_NUM_EXTENSIONS, &n);
+		std::cout << "GL extensions: " << n << '\n';
+
+		//for (GLint i = 0; i < n; i++) {
+		//    const char* extension_name = (const char*)glGetStringi(GL_EXTENSIONS, i);
+		//    std::cout << extension_name << '\n';
+		//}
+	}
+}
+
+void App::destroy(void) {
+	stopSignal = true;
+	frameQueue.clear();
+	displayQueue.clear();
+	encodeQueue.clear();
+	decodeQueue.clear();
+
+	// clean up ImGUI
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
+	// clean up OpenCV
+	cv::destroyAllWindows();
+	if (videoCapture.isOpened())
+		videoCapture.release();
+
+	// clean-up GLFW
+	if (window) {
+		glfwDestroyWindow(window);
+		window = nullptr;
+	}
+	glfwTerminate();
+
+	for (auto& model : models) {
+		for (auto& mesh : model.meshes) {
+			mesh.clear();
+		}
+	}
 }
 
 App::~App() {
-	stop_signal = true;
-	frame_queue.clear();
-	display_queue.clear();
-	encode_queue.clear();
-	decode_queue.clear();
-
-	cv::destroyAllWindows();
-
-	if (video_capture.isOpened())
-		video_capture.release();
+	destroy();
 
 	cout << "Application exited cleanly.\n";
 }
-
-
