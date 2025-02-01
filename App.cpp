@@ -3,8 +3,6 @@
 
 #include "App.h"
 
-using namespace std;
-
 
 App::App() : camera(glm::vec3(0.0f, 0.0f, 3.0f)), threadPool(std::thread::hardware_concurrency()) {
 	//cout << "OpenCV: " << CV_VERSION << endl;
@@ -40,16 +38,16 @@ void App::init(void) {
 
 		initImgui();
 
-	} catch (const exception& e) {
-		cerr << "Initialization failed: " << e.what() << endl;
+	} catch (const std::exception& e) {
+		std::cerr << "Initialization failed: " << e.what() << std::endl;
 		throw;
 	}
 
-	cout << "Application initialized.\n";
+	std::cout << "Application initialized.\n";
 }
 
 void App::initOpenCV() {
-	cout << "OpenCV: " << CV_VERSION << endl;
+	std::cout << "OpenCV: " << CV_VERSION << std::endl;
 
 	try {
 		//open video file
@@ -64,8 +62,8 @@ void App::initOpenCV() {
 		//threadPool.enqueue(&App::processingThreadFunction, this);
 		//threadPool.enqueue(&App::GUIThreadFunction, this);
 		//threadPool.enqueue(&App::encodeThreadFunction, this);
-	} catch (const exception& e) {
-		cerr << "OpenCV init failed: " << e.what() << endl;
+	} catch (const std::exception& e) {
+		std::cerr << "OpenCV init failed: " << e.what() << std::endl;
 		throw;
 	}
 }
@@ -161,20 +159,10 @@ void App::initAssets() {
 	Model testModel("resources/sub.obj", shaders[0], true);
 	testModel.origin = glm::vec3(0.0f, 0.0f, 0.0f);
 	testModel.orientation = glm::vec3(0.0f, 0.0f, 0.0f);
-
-	/*std::vector<Vertex> triVertices = {
-	{{-0.5f, -0.5f, 0.0f}, {}, {}}, 
-	{{ 0.5f, -0.5f, 0.0f}, {}, {}},
-	{{ 0.0f,  0.5f, 0.0f}, {}, {}}
-	};
-	std::vector<GLuint> triIndices = { 0, 1, 2 };
-
-	//Model testModel(triVertices, triIndices, modelShader);*/
-
-	//Model testModel(triVertices, triIndices, shaders[0]);
-	//testModel.origin = glm::vec3(0.0f, 0.0f, -2.0f);
-	//testModel.meshes[0].primitive_type = GL_TRIANGLES;
 	models.push_back(std::move(testModel));
+
+	Model grid = createGrid(10, shaders[0]);
+	models.push_back(std::move(grid));
 }
 
 int App::run(void) {
@@ -203,7 +191,6 @@ int App::run(void) {
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
 			ImGui::NewFrame();
-			//ImGui::ShowDemoWindow(); // Enable mouse when using Demo!
 			ImGui::SetNextWindowPos(ImVec2(10, 10));
 			ImGui::SetNextWindowSize(ImVec2(250, 100));
 
@@ -211,7 +198,7 @@ int App::run(void) {
 			ImGui::Text("V-Sync: %s", isVsyncOn ? "ON" : "OFF");
 			ImGui::Text("FPS: %.1f", FPS);
 			ImGui::Text("(press RMB to release mouse)");
-			ImGui::Text("(hit D to show/hide info)");
+			ImGui::Text("(press I to show/hide info)");
 			ImGui::End();
 		}
 
@@ -285,26 +272,61 @@ void App::processInput(float deltaTime) {
 	camera.position += direction * camera.movementSpeed * deltaTime * speedMultiplier;
 }
 
+Model App::createGrid(int gridSize, ShaderProgram& shader) {
+	std::vector<Vertex> gridVertices;
+	std::vector<GLuint> gridIndices;
+
+	for (int z = -gridSize; z <= gridSize; ++z) {
+		Vertex v;
+		v.normal = glm::vec3(0.0f, 1.0f, 0.0f);
+		v.texCoords = glm::vec2(0.0f, 0.0f);
+
+		v.position = glm::vec3(-gridSize, 0.0f, static_cast<float>(z));
+		gridVertices.push_back(v);
+
+		v.position = glm::vec3(gridSize, 0.0f, static_cast<float>(z));
+		gridVertices.push_back(v);
+	}
+
+	for (int x = -gridSize; x <= gridSize; ++x) {
+		Vertex v;
+		v.normal = glm::vec3(0.0f, 1.0f, 0.0f);
+		v.texCoords = glm::vec2(0.0f, 0.0f);
+
+		v.position = glm::vec3(static_cast<float>(x), 0.0f, -gridSize);
+		gridVertices.push_back(v);
+
+		v.position = glm::vec3(static_cast<float>(x), 0.0f, gridSize);
+		gridVertices.push_back(v);
+	}
+
+	gridIndices.resize(gridVertices.size());
+	for (unsigned int i = 0; i < gridIndices.size(); ++i)
+		gridIndices[i] = i;
+
+	return Model(GL_LINES, gridVertices, gridIndices, shader);
+}
+
 void App::cameraThreadFunction() {
 	cv::Mat frame;
 
     while (!stopSignal) {
-		auto start = chrono::high_resolution_clock::now();
+		auto start = std::chrono::high_resolution_clock::now();
 
         videoCapture.read(frame);
         if (frame.empty() && displayQueue.empty()) {
-            cerr << "Camera disconnected or end of stream.\n";
+			std::cerr << "Camera disconnected or end of stream.\n";
             stopSignal = true;
             break;
         }
         frameQueue.push(frame);
 
-		displayQueue.push(make_tuple(frame, "Original Frame"));
+		displayQueue.push(std::make_tuple(frame, "Original Frame"));
 		encodeQueue.push(frame);
 
-		auto end = chrono::high_resolution_clock::now();
-		chrono::duration<double> elapsed_microseconds = end - start;
-		auto ms = chrono::duration_cast<chrono::microseconds>(elapsed_microseconds).count() / 1000.0;
+		auto end = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> elapsed_microseconds = end - start;
+		auto ms = std::chrono::duration_cast<std::chrono::microseconds>(elapsed_microseconds).count() / 1000.0;
 		//cout << "Elapsed time capturing: " << ms << "ms, " << "FPS: " << 1000.0 / ms << endl;
 	}
 }
@@ -319,18 +341,18 @@ void App::encodeThreadFunction() {
 				continue;
 			}
 
-			auto start = chrono::high_resolution_clock::now();
+			auto start = std::chrono::high_resolution_clock::now();
 
 			auto size_uncompressed = frame.elemSize() * frame.total();
 			auto size_compressed_limit = size_uncompressed * target_coefficient;
-			vector<uchar> bytes = lossyLimitBW(frame, size_compressed_limit);
+			std::vector<uchar> bytes = lossyLimitBW(frame, size_compressed_limit);
 			//vector<uchar> bytes = lossyLimitQuality(frame, 30.0f);
 
 			decodeQueue.push(bytes);
 
-			auto end = chrono::high_resolution_clock::now();
-			chrono::duration<double> elapsed_microseconds = end - start;
-			auto ms = chrono::duration_cast<chrono::microseconds>(elapsed_microseconds).count() / 1000.0;
+			auto end = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<double> elapsed_microseconds = end - start;
+			auto ms = std::chrono::duration_cast<std::chrono::microseconds>(elapsed_microseconds).count() / 1000.0;
 			//cout << "Elapsed time encoding: " << ms << "ms, " << "FPS: " << 1000.0 / ms << endl;
 		}
 	}
@@ -345,7 +367,7 @@ void App::processingThreadFunction() {
 				continue;
 			}
 
-			auto start = chrono::high_resolution_clock::now();
+			auto start = std::chrono::high_resolution_clock::now();
 
 			cv::Point2f center = findObject(frame);
 			cv::Point2f center_normalized(center.x / frame.cols, center.y / frame.rows);
@@ -354,11 +376,11 @@ void App::processingThreadFunction() {
 			frame.copyTo(scene_cross);
 			drawCrossNormalized(scene_cross, center_normalized, 30);
 
-			displayQueue.push(make_tuple(scene_cross, "Processed Frame"));
+			displayQueue.push(std::make_tuple(scene_cross, "Processed Frame"));
 
-			auto end = chrono::high_resolution_clock::now();
-			chrono::duration<double> elapsed_microseconds = end - start;
-			auto ms = chrono::duration_cast<chrono::microseconds>(elapsed_microseconds).count() / 1000.0;
+			auto end = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<double> elapsed_microseconds = end - start;
+			auto ms = std::chrono::duration_cast<std::chrono::microseconds>(elapsed_microseconds).count() / 1000.0;
 			//cout << "Elapsed time processing: " << ms << "ms, " << "FPS: " << 1000.0 / ms << endl;
 		}
 	}
@@ -385,13 +407,13 @@ void App::GUIThreadFunction() {
 	glfwSwapInterval(1);
 
 	cv::Mat frame;
-	tuple<cv::Mat, string> display;
+	std::tuple<cv::Mat, std::string> display;
 	//int target_fps = 15;
 
 	while (!stopSignal) {
 		if (displayQueue.pop(display)) {
-			frame = get<0>(display);
-			string window_name = get<1>(display);
+			frame = std::get<0>(display);
+			std::string window_name = std::get<1>(display);
 			if (frame.empty()) {
 				continue;
 			}
@@ -409,7 +431,7 @@ void App::GUIThreadFunction() {
 	}
 }
 
-vector<uchar> App::lossyLimitBW(cv::Mat& input_img, size_t size_limit) {
+std::vector<uchar> App::lossyLimitBW(cv::Mat& input_img, size_t size_limit) {
 	std::string suff(".jpg"); // target format
 	if (!cv::haveImageWriter(suff))
 		throw std::runtime_error("Can not compress to format:" + suff);
@@ -442,7 +464,7 @@ vector<uchar> App::lossyLimitBW(cv::Mat& input_img, size_t size_limit) {
 	return bytes;
 }
 
-vector<uchar> App::lossyLimitQuality(cv::Mat& input_img, float target_quality) {
+std::vector<uchar> App::lossyLimitQuality(cv::Mat& input_img, float target_quality) {
 	std::string suff(".jpg"); // Target format
     if (!cv::haveImageWriter(suff))
         throw std::runtime_error("Cannot compress to format: " + suff);
@@ -520,8 +542,8 @@ cv::Point2f App::findObject(const cv::Mat& img) {
     cv::bitwise_or(img_threshold1, img_threshold2, img_threshold);
 
 	// find contours
-	vector<vector<cv::Point>> contours;
-	vector<cv::Vec4i> hierarchy;
+	std::vector<std::vector<cv::Point>> contours;
+	std::vector<cv::Vec4i> hierarchy;
 	cv::findContours(img_threshold, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
 	// find the largest contour
@@ -560,9 +582,9 @@ void App::drawCross(cv::Mat& img, int x, int y, int size) {
 }
 
 void App::drawCrossNormalized(cv::Mat& img, cv::Point2f center_normalized, int size) {
-	center_normalized.x = clamp(center_normalized.x, 0.0f, 1.0f);
-	center_normalized.y = clamp(center_normalized.y, 0.0f, 1.0f);
-	size = clamp(size, 1, min(img.cols, img.rows));
+	center_normalized.x = std::clamp(center_normalized.x, 0.0f, 1.0f);
+	center_normalized.y = std::clamp(center_normalized.y, 0.0f, 1.0f);
+	size = std::clamp(size, 1, std::min(img.cols, img.rows));
 
 	cv::Point2f center_absolute(center_normalized.x * img.cols, center_normalized.y * img.rows);
 
@@ -574,7 +596,7 @@ void App::printInfoGLM() {
 }
 
 void App::printInfoOpenCV() {
-	cout << " Capture source: " <<
+	std::cout << " Capture source: " <<
 		": width=" << videoCapture.get(cv::CAP_PROP_FRAME_WIDTH) <<
 		", height=" << videoCapture.get(cv::CAP_PROP_FRAME_HEIGHT) << '\n';
 }
@@ -675,5 +697,5 @@ void App::destroy(void) {
 App::~App() {
 	destroy();
 
-	cout << "Application exited cleanly.\n";
+	std::cout << "Application exited cleanly.\n";
 }

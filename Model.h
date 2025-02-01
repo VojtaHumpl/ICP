@@ -20,9 +20,9 @@ public:
 	glm::vec3 origin{};
 	glm::vec3 orientation{};
 
-	Model(std::vector<Vertex> const& vertices, std::vector<GLuint> const& indices, ShaderProgram& shader) {
+	Model(int primitiveType, std::vector<Vertex> const& vertices, std::vector<GLuint> const& indices, ShaderProgram& shader) {
 		Mesh mesh(
-			GL_TRIANGLES,
+			primitiveType,
 			shader,
 			vertices,
 			indices,
