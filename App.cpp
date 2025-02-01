@@ -6,7 +6,7 @@
 using namespace std;
 
 
-App::App() : threadPool(std::thread::hardware_concurrency()) {
+App::App() : camera(glm::vec3(0.0f, 0.0f, 3.0f)), threadPool(std::thread::hardware_concurrency()) {
 	//cout << "OpenCV: " << CV_VERSION << endl;
 }
 
@@ -14,7 +14,7 @@ void App::init(void) {
 	try {
 		std::cout << "Current working directory: " << std::filesystem::current_path().generic_string() << '\n';
 
-		if (!std::filesystem::exists("bin"))
+		if (!std::filesystem::exists("dlls"))
 			throw std::runtime_error("Directory 'bin' not found. DLLs are expected to be there.");
 
 		if (!std::filesystem::exists("resources"))
@@ -119,6 +119,7 @@ void App::initGLFW() {
 	glfwSetMouseButtonCallback(window, GLFWMouseButtonCallback);
 	glfwSetKeyCallback(window, GLFWKeyCallback);
 	glfwSetScrollCallback(window, GLFWScrollCallback);
+	glfwSetCursorPosCallback(window, GLFWCursorPosCallback);
 }
 
 void App::initGLDebug() {
@@ -178,6 +179,12 @@ int App::run(void) {
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
 	while (!glfwWindowShouldClose(window)) {
+		double now = glfwGetTime();
+		deltaTime = now - lastFrameTime;
+		lastFrameTime = now;
+
+		processInput(deltaTime);
+
 		if (showImgui) {
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
@@ -194,7 +201,7 @@ int App::run(void) {
 			ImGui::End();
 		}
 
-		double time_speed = showImgui ? 0.0 : 1.0;
+		//double time_speed = showImgui ? 0.0 : 1.0;
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -204,11 +211,13 @@ int App::run(void) {
 			0.01f, 100.0f             // near, far planes
 		);
 
-		glm::mat4 view = glm::lookAt(
-			glm::vec3(0, 10, 15),      // camera pos
-			glm::vec3(0, 0, 0),      // look at origin
+		/*glm::mat4 view = glm::lookAt(
+			glm::vec3(0, 20, 15),      // camera pos
+			glm::vec3(0, 10, 0),      // look at origin
 			glm::vec3(0, 1, 0)       // up direction
-		);
+		);*/
+
+		glm::mat4 view = camera.getViewMatrix();
 
 		shaders[0].activate();
 		shaders[0].setUniform("projection", projection);
@@ -230,9 +239,7 @@ int App::run(void) {
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
-		double now = glfwGetTime();
-		double delta_t = now - lastFrameTime;
-		lastFrameTime = now;
+		
 
 		fps_counter_frames++;
 		if (now - fps_last_displayed >= 1.0) {
@@ -244,6 +251,36 @@ int App::run(void) {
 	}
 
 	return EXIT_SUCCESS;
+}
+
+void App::processInput(float deltaTime) {
+	glm::vec3 direction(0.0f);
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		direction += camera.front;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		direction -= camera.front;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		direction -= camera.right;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		direction += camera.right;
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+		direction += camera.worldUp;
+	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
+		direction -= camera.worldUp;
+
+	// normalize so diagonal movement isn't faster
+	if (glm::length(direction) > 0.0f)
+		direction = glm::normalize(direction);
+
+	float speedMultiplier = 1.0f;
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+		glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
+		speedMultiplier = 2.0f;  // Change this multiplier to adjust the boost factor.
+	}
+
+	// Update the camera position. (movementSpeed is in units per second.)
+	camera.position += direction * camera.movementSpeed * deltaTime * speedMultiplier;
 }
 
 void App::cameraThreadFunction() {

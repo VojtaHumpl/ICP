@@ -21,7 +21,7 @@ void App::GLFWKeyCallback(GLFWwindow* window, int key, int scancode, int action,
 			glfwSwapInterval(this_inst->isVsyncOn);
 			std::cout << "VSync: " << this_inst->isVsyncOn << "\n";
 			break;
-		case GLFW_KEY_D:
+		case GLFW_KEY_I:
 			this_inst->showImgui = !this_inst->showImgui;
 			break;
 		default:
@@ -31,9 +31,12 @@ void App::GLFWKeyCallback(GLFWwindow* window, int key, int scancode, int action,
 }
 
 void App::GLFWScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
-	// change current color (r, g or b) with the mouse wheel
 	auto this_inst = static_cast<App*>(glfwGetWindowUserPointer(window));
-	
+	if (yoffset > 0) {
+		this_inst->camera.ProcessMouseScroll(1.0f);
+	} else if (yoffset < 0) {
+		this_inst->camera.ProcessMouseScroll(-1.0f);
+	}
 }
 
 void App::GLFWFramebufferSizeCallback(GLFWwindow* window, int width, int height) {
@@ -60,6 +63,30 @@ void App::GLFWMouseButtonCallback(GLFWwindow* window, int button, int action, in
 		default:
 			break;
 		}
+	}
+}
+
+void App::GLFWCursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
+	static bool firstMouse = true;
+	static double lastX = 0.0;
+	static double lastY = 0.0;
+	
+	auto this_inst = static_cast<App*>(glfwGetWindowUserPointer(window));
+
+	if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED) {
+		if (firstMouse) {
+			lastX = xpos;
+			lastY = ypos;
+			firstMouse = false;
+		}
+
+		double xoffset = xpos - lastX;
+		double yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+		lastX = xpos;
+		lastY = ypos;
+		this_inst->camera.ProcessMouseMovement(xoffset, yoffset);
+	} else {
+		firstMouse = true;
 	}
 }
 

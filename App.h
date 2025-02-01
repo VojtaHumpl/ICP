@@ -31,6 +31,7 @@
 #include "Assets.h"
 #include "ShaderProgram.h"
 #include "Model.h"
+#include "Camera.h"
 
 
 class App {
@@ -49,7 +50,11 @@ private:
 	int windowWidth = 1280;
 	int windowHeight = 720;
 	bool isVsyncOn = true;
+
 	bool showImgui = true;
+	float deltaTime = 0.0f;
+
+	Camera camera;
 
 	std::vector<Model> models;
 	std::vector<ShaderProgram> shaders;
@@ -76,6 +81,8 @@ private:
 	void printInfoGLM();
 	void printInfoGL();
 
+	void processInput(float deltaTime);
+
 	void drawCross(cv::Mat& img, int x, int y, int size);
 	void drawCrossNormalized(cv::Mat& img, const cv::Point2f center_normalized, const int size);
 	cv::Point2f findObject(const cv::Mat& img);
@@ -96,5 +103,6 @@ private:
 	static void GLFWMouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 	static void GLFWKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 	static void GLFWScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+	static void GLFWCursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 	static void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
 };

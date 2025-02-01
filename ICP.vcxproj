@@ -46,6 +46,7 @@
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="Assets.h" />
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="imgui-docking\backends\imgui_impl_glfw.h" />
     <ClInclude Include="imgui-docking\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="imgui-docking\backends\imgui_impl_opengl3_loader.h" />
@@ -121,12 +122,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ExecutablePath>$(OPENCV_DIR)\x64\vc16\bin;$(VC_ExecutablePath_x64);$(CommonExecutablePath);$(ProjectDir)bin</ExecutablePath>
+    <ExecutablePath>$(OPENCV_DIR)\x64\vc16\bin;$(VC_ExecutablePath_x64);$(CommonExecutablePath);$(ProjectDir)dlls</ExecutablePath>
     <IncludePath>$(OPENCV_DIR)\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)include;$(ProjectDir)/imgui-docking</IncludePath>
     <LibraryPath>$(OPENCV_DIR)\x64\vc16\bin;$(OPENCV_DIR)\x64\vc16\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(ProjectDir)lib</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ExecutablePath>$(OPENCV_DIR)\x64\vc16\bin;$(VC_ExecutablePath_x64);$(CommonExecutablePath);$(ProjectDir)bin</ExecutablePath>
+    <ExecutablePath>$(OPENCV_DIR)\x64\vc16\bin;$(VC_ExecutablePath_x64);$(CommonExecutablePath);$(ProjectDir)dlls</ExecutablePath>
     <IncludePath>$(OPENCV_DIR)\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)include;$(ProjectDir)/imgui-docking</IncludePath>
     <LibraryPath>$(OPENCV_DIR)\x64\vc16\bin;$(OPENCV_DIR)\x64\vc16\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(ProjectDir)lib</LibraryPath>
   </PropertyGroup>
