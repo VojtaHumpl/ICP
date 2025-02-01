@@ -34,7 +34,7 @@ public:
         : front(glm::vec3(0.0f, 0.0f, -1.0f)),
         movementSpeed(50.0f),
         mouseSensitivity(0.1f),
-        zoom(45.0f) {
+        zoom(90.0f) {
         this->position = position;
         worldUp = up;
         this->yaw = yaw;
@@ -42,14 +42,14 @@ public:
         updateCameraVectors();
     }
 
-    // Returns the view matrix calculated using Euler Angles and the LookAt Matrix.
     glm::mat4 getViewMatrix() {
         return glm::lookAt(position, position + front, up);
     }
 
-    // Processes input received from keyboard.
-    // Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems).
-    // deltaTime is used to ensure consistent movement speed regardless of frame rate.
+    glm::mat4 getProjectionMatrix(float aspect, float nearPlane = 0.01f, float farPlane = 100.0f) const {
+        return glm::perspective(glm::radians(zoom), aspect, nearPlane, farPlane);
+    }
+
     void ProcessKeyboard(Camera_Movement direction, float deltaTime) {
         float velocity = movementSpeed * deltaTime;
         if (direction == FORWARD)
@@ -94,8 +94,8 @@ public:
         zoom -= yoffset;
         if (zoom < 1.0f)
             zoom = 1.0f;
-        if (zoom > 45.0f)
-            zoom = 45.0f;
+        if (zoom > 90.0f)
+            zoom = 90.0f;
     }
 
 private:

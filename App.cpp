@@ -103,11 +103,23 @@ void App::initGLFW() {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-	window = glfwCreateWindow(windowWidth, windowHeight, "ICP", nullptr, nullptr);
+
+	const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+	if (fullscreen) {
+		window = glfwCreateWindow(mode->width, mode->height, "ICP", glfwGetPrimaryMonitor(), nullptr);
+	} else {
+		window = glfwCreateWindow(windowWidth, windowHeight, "ICP", nullptr, nullptr);
+	}
+
 	if (!window) {
 		throw std::runtime_error("GLFW window can not be created.");
 	}
+
+	windowX = (mode->width - windowWidth) / 2;
+	windowY = (mode->height - windowHeight) / 2;
+	glfwSetWindowPos(window, windowX, windowY);
 
 	glfwSetWindowUserPointer(window, this);
 
@@ -120,6 +132,7 @@ void App::initGLFW() {
 	glfwSetKeyCallback(window, GLFWKeyCallback);
 	glfwSetScrollCallback(window, GLFWScrollCallback);
 	glfwSetCursorPosCallback(window, GLFWCursorPosCallback);
+	glfwSetWindowPosCallback(window, GLFWWindowPosCallback);
 }
 
 void App::initGLDebug() {
@@ -166,6 +179,7 @@ void App::initAssets() {
 
 int App::run(void) {
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 	//glDisable(GL_DEPTH_TEST);
 	//glDisable(GL_CULL_FACE);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -205,18 +219,7 @@ int App::run(void) {
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glm::mat4 projection = glm::perspective(
-			glm::radians(90.0f),      // FOV
-			(float)windowWidth / (float)windowHeight,  // aspect ratio
-			0.01f, 100.0f             // near, far planes
-		);
-
-		/*glm::mat4 view = glm::lookAt(
-			glm::vec3(0, 20, 15),      // camera pos
-			glm::vec3(0, 10, 0),      // look at origin
-			glm::vec3(0, 1, 0)       // up direction
-		);*/
-
+		glm::mat4 projection = camera.getProjectionMatrix((float)windowWidth / (float)windowHeight, 0.01f, 1000.0f);
 		glm::mat4 view = camera.getViewMatrix();
 
 		shaders[0].activate();
@@ -239,7 +242,6 @@ int App::run(void) {
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
-		
 
 		fps_counter_frames++;
 		if (now - fps_last_displayed >= 1.0) {
@@ -276,7 +278,7 @@ void App::processInput(float deltaTime) {
 	float speedMultiplier = 1.0f;
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
 		glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
-		speedMultiplier = 2.0f;  // Change this multiplier to adjust the boost factor.
+		speedMultiplier = 2.5f;  // Change this multiplier to adjust the boost factor.
 	}
 
 	// Update the camera position. (movementSpeed is in units per second.)

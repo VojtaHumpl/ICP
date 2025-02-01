@@ -24,6 +24,18 @@ void App::GLFWKeyCallback(GLFWwindow* window, int key, int scancode, int action,
 		case GLFW_KEY_I:
 			this_inst->showImgui = !this_inst->showImgui;
 			break;
+		case GLFW_KEY_F:
+			this_inst->fullscreen = !this_inst->fullscreen;
+			if (this_inst->fullscreen) {
+				const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+				this_inst->prevWindowWidth = this_inst->windowWidth;
+				this_inst->prevWindowHeight = this_inst->windowHeight;
+				glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
+			} else {
+				glfwSetWindowMonitor(window, nullptr, 0, 0, this_inst->prevWindowWidth, this_inst->prevWindowHeight, GLFW_DONT_CARE);
+				glfwSetWindowPos(window, this_inst->windowX, this_inst->windowY);
+			}
+			break;
 		default:
 			break;
 		}
@@ -40,7 +52,21 @@ void App::GLFWScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 }
 
 void App::GLFWFramebufferSizeCallback(GLFWwindow* window, int width, int height) {
+	auto this_inst = static_cast<App*>(glfwGetWindowUserPointer(window));
 
+	this_inst->windowWidth = width;
+	this_inst->windowHeight = height;
+	glViewport(0, 0, width, height);
+}
+
+void App::GLFWWindowPosCallback(GLFWwindow* window, int xpos, int ypos) {
+	auto this_inst = static_cast<App*>(glfwGetWindowUserPointer(window));
+
+	if (this_inst->fullscreen)
+		return;
+
+	this_inst->windowX = xpos;
+	this_inst->windowY = ypos;
 }
 
 void App::GLFWMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
