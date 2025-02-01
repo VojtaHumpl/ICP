@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
+    <ClCompile Include="Audio.cpp" />
     <ClCompile Include="callbacks.cpp" />
     <ClCompile Include="imgui-docking\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="imgui-docking\backends\imgui_impl_opengl3.cpp" />
@@ -46,6 +47,7 @@
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="Assets.h" />
+    <ClInclude Include="Audio.h" />
     <ClInclude Include="imgui-docking\backends\imgui_impl_glfw.h" />
     <ClInclude Include="imgui-docking\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="imgui-docking\backends\imgui_impl_opengl3_loader.h" />
@@ -57,6 +59,7 @@
     <ClInclude Include="imgui-docking\imstb_truetype.h" />
     <ClInclude Include="imgui-docking\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="MiniAudio.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="stb_image.h" />
