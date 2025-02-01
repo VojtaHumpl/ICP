@@ -9,6 +9,9 @@ public:
     ~AudioPlayer();
 
     bool playSound(const std::string& filePath);
+    bool playMissileExplosionSound();
+    bool playMissileLaunchSound();
+    bool playSneezeSound();
     void cleanup();
 
 private:

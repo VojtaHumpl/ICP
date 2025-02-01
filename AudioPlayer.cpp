@@ -25,6 +25,18 @@ bool AudioPlayer::playSound(const std::string& filePath) {
     return true;
 }
 
+bool AudioPlayer::playMissileExplosionSound() {
+    return playSound("resources/missile_explosion_sound.wav");
+}
+
+bool AudioPlayer::playMissileLaunchSound() {
+    return playSound("resources/missile_launch_sound.wav");
+}
+
+bool AudioPlayer::playSneezeSound() {
+    return playSound("resources/sneeze_sound.wav");
+}
+
 void AudioPlayer::cleanup() {
     if (initialized) {
         ma_engine_uninit(&engine);
