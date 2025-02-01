@@ -93,9 +93,9 @@ public:
 				}
 
 				Vertex vertex{};
-				vertex.Position = position;
-				vertex.Normal = normal;
-				vertex.TexCoords = texCoords;
+				vertex.position = position;
+				vertex.normal = normal;
+				vertex.texCoords = texCoords;
 
 				vertices.push_back(vertex);
 				indices.push_back(static_cast<GLuint>(vertices.size() - 1));
@@ -110,17 +110,17 @@ public:
 				GLuint i1 = indices[i + 1];
 				GLuint i2 = indices[i + 2];
 
-				glm::vec3 p0 = vertices[i0].Position;
-				glm::vec3 p1 = vertices[i1].Position;
-				glm::vec3 p2 = vertices[i2].Position;
+				glm::vec3 p0 = vertices[i0].position;
+				glm::vec3 p1 = vertices[i1].position;
+				glm::vec3 p2 = vertices[i2].position;
 
 				glm::vec3 edge1 = p1 - p0;
 				glm::vec3 edge2 = p2 - p0;
 				glm::vec3 faceNormal = glm::normalize(glm::cross(edge1, edge2));
 
-				vertices[i0].Normal = faceNormal;
-				vertices[i1].Normal = faceNormal;
-				vertices[i2].Normal = faceNormal;
+				vertices[i0].normal = faceNormal;
+				vertices[i1].normal = faceNormal;
+				vertices[i2].normal = faceNormal;
 			}
 
 			glm::vec4 ambient(1.0f), diffuse(1.0f), specular(1.0f);
