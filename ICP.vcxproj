@@ -20,7 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
-    <ClCompile Include="Audio.cpp" />
+    <ClCompile Include="AudioPlayer.cpp" />
     <ClCompile Include="callbacks.cpp" />
     <ClCompile Include="imgui-docking\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="imgui-docking\backends\imgui_impl_opengl3.cpp" />
@@ -47,7 +47,7 @@
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="Assets.h" />
-    <ClInclude Include="Audio.h" />
+    <ClInclude Include="AudioPlayer.h" />
     <ClInclude Include="imgui-docking\backends\imgui_impl_glfw.h" />
     <ClInclude Include="imgui-docking\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="imgui-docking\backends\imgui_impl_opengl3_loader.h" />
