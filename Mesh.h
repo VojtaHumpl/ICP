@@ -25,7 +25,7 @@ public:
 	glm::vec4 ambient_material{ 1.0f }; //white, non-transparent 
 	glm::vec4 diffuse_material{ 1.0f }; //white, non-transparent 
 	glm::vec4 specular_material{ 1.0f }; //white, non-transparent
-	float reflectivity{ 1.0f };
+	float shininess{ 1.0f };
 
 	// indirect (indexed) draw 
 	Mesh(GLenum primitive_type, ShaderProgram& shader, std::vector<Vertex> const& vertices, std::vector<GLuint> const& indices, glm::vec3 const& origin, glm::vec3 const& orientation, GLuint const texture_id = 0) :
@@ -53,7 +53,7 @@ public:
         ambient_material(other.ambient_material),
         diffuse_material(other.diffuse_material),
         specular_material(other.specular_material),
-        reflectivity(other.reflectivity) {
+        shininess(other.shininess) {
             other.VAO = 0;
             other.VBO = 0;
             other.EBO = 0;
@@ -76,7 +76,7 @@ public:
 			ambient_material = other.ambient_material;
 			diffuse_material = other.diffuse_material;
 			specular_material = other.specular_material;
-			reflectivity = other.reflectivity;
+			shininess = other.shininess;
 			other.VAO = 0;
 			other.VBO = 0;
 			other.EBO = 0;
@@ -112,7 +112,7 @@ public:
 		shader.setUniform("material.ambient", ambient_material);
 		shader.setUniform("material.diffuse", diffuse_material);
 		//shader.setUniform("material.specular", specular_material);
-		//shader.setUniform("material.reflectivity", reflectivity);
+		//shader.setUniform("material.shininess", shininess);
 
 		// Bind texture if available
 		if (texture_id > 0) {
@@ -144,7 +144,7 @@ public:
 		ambient_material = glm::vec4(1.0f);
 		diffuse_material = glm::vec4(1.0f);
 		specular_material = glm::vec4(1.0f);
-		reflectivity = 1.0f;
+		shininess = 1.0f;
 		vertices.clear();
 		indices.clear();
 

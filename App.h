@@ -61,8 +61,10 @@ private:
 
 	Camera camera;
 
+	DirectionalLight sunLight;
 	std::vector<Model> models;
 	std::vector<ShaderProgram> shaders;
+	
 
 	cv::VideoCapture videoCapture;
 	ThreadSafeQueue<cv::Mat> frameQueue;
@@ -88,7 +90,6 @@ private:
 
 	void processInput(float deltaTime);
 
-	Model createGrid(int gridSize, ShaderProgram& shader);
 	void drawCross(cv::Mat& img, int x, int y, int size);
 	void drawCrossNormalized(cv::Mat& img, const cv::Point2f center_normalized, const int size);
 	cv::Point2f findObject(const cv::Mat& img);

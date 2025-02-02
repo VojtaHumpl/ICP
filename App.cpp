@@ -156,13 +156,18 @@ void App::initAssets() {
 	ShaderProgram modelShader("modelVS.glsl", "modelFS.glsl");
 	shaders.push_back(std::move(modelShader));
 
-	Model testModel("resources/sub.obj", shaders[0], true);
+	Model testModel("resources/bunny10k_textured.obj", shaders[0], true);
 	testModel.origin = glm::vec3(0.0f, 0.0f, 0.0f);
 	testModel.orientation = glm::vec3(0.0f, 0.0f, 0.0f);
 	models.push_back(std::move(testModel));
 
-	Model grid = createGrid(10, shaders[0]);
+	Model grid = Assets::createGrid(10, shaders[0]);
 	models.push_back(std::move(grid));
+
+	Model terrain = Assets::createTerrain(15.f, 0.01f, shaders[0]);
+	models.push_back(std::move(terrain));
+
+	sunLight = Assets::createDirectionalLight(glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f), glm::vec4(0.5f, 0.5f, 0.5f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 }
 
 int App::run(void) {
@@ -212,6 +217,12 @@ int App::run(void) {
 		shaders[0].activate();
 		shaders[0].setUniform("projection", projection);
 		shaders[0].setUniform("view", view);
+		shaders[0].setUniform("viewPos", camera.position);
+		shaders[0].setUniform("dirLight.direction", sunLight.direction);
+		shaders[0].setUniform("dirLight.ambient", sunLight.ambient);
+		shaders[0].setUniform("dirLight.diffuse", sunLight.diffuse);
+		shaders[0].setUniform("dirLight.specular", sunLight.specular);
+		shaders[0].setUniform("ambientOcclusion", 0.1f);
 
 		// RENDER: GL drawCalls
 
@@ -272,40 +283,7 @@ void App::processInput(float deltaTime) {
 	camera.position += direction * camera.movementSpeed * deltaTime * speedMultiplier;
 }
 
-Model App::createGrid(int gridSize, ShaderProgram& shader) {
-	std::vector<Vertex> gridVertices;
-	std::vector<GLuint> gridIndices;
 
-	for (int z = -gridSize; z <= gridSize; ++z) {
-		Vertex v;
-		v.normal = glm::vec3(0.0f, 1.0f, 0.0f);
-		v.texCoords = glm::vec2(0.0f, 0.0f);
-
-		v.position = glm::vec3(-gridSize, 0.0f, static_cast<float>(z));
-		gridVertices.push_back(v);
-
-		v.position = glm::vec3(gridSize, 0.0f, static_cast<float>(z));
-		gridVertices.push_back(v);
-	}
-
-	for (int x = -gridSize; x <= gridSize; ++x) {
-		Vertex v;
-		v.normal = glm::vec3(0.0f, 1.0f, 0.0f);
-		v.texCoords = glm::vec2(0.0f, 0.0f);
-
-		v.position = glm::vec3(static_cast<float>(x), 0.0f, -gridSize);
-		gridVertices.push_back(v);
-
-		v.position = glm::vec3(static_cast<float>(x), 0.0f, gridSize);
-		gridVertices.push_back(v);
-	}
-
-	gridIndices.resize(gridVertices.size());
-	for (unsigned int i = 0; i < gridIndices.size(); ++i)
-		gridIndices[i] = i;
-
-	return Model(GL_LINES, gridVertices, gridIndices, shader);
-}
 
 void App::cameraThreadFunction() {
 	cv::Mat frame;
