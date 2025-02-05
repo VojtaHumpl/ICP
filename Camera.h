@@ -47,28 +47,11 @@ public:
     }
 
     glm::mat4 getProjectionMatrix(float aspect, float nearPlane = 0.01f, float farPlane = 100.0f) const {
+		if (aspect == 0.0f || std::isnan(aspect))
+			return glm::perspective(glm::radians(zoom), 1.0f, nearPlane, farPlane);
         return glm::perspective(glm::radians(zoom), aspect, nearPlane, farPlane);
     }
 
-    void ProcessKeyboard(Camera_Movement direction, float deltaTime) {
-        float velocity = movementSpeed * deltaTime;
-        if (direction == FORWARD)
-            position += front * velocity;
-        if (direction == BACKWARD)
-            position -= front * velocity;
-        if (direction == LEFT)
-            position -= right * velocity;
-        if (direction == RIGHT)
-            position += right * velocity;
-		if (direction == UP)
-			position += worldUp * velocity;
-		if (direction == DOWN)
-			position -= worldUp * velocity;
-    }
-
-    // Processes input received from a mouse input system.
-    // Expects the offset value in both the x and y direction.
-    // (Use this if you want to enable mouse look.)
     void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch = true) {
         xoffset *= mouseSensitivity;
         yoffset *= mouseSensitivity;
@@ -76,7 +59,6 @@ public:
         yaw += xoffset;
         pitch += yoffset;
 
-        // Make sure that when pitch is out of bounds, the screen doesn't get flipped.
         if (constrainPitch) {
             if (pitch > 89.0f)
                 pitch = 89.0f;
@@ -84,12 +66,9 @@ public:
                 pitch = -89.0f;
         }
 
-        // Update front, right and up Vectors using the updated Euler angles.
         updateCameraVectors();
     }
 
-    // Processes input received from a mouse scroll-wheel event.
-    // Only requires input on the vertical wheel-axis.
     void ProcessMouseScroll(float yoffset) {
         zoom -= yoffset;
         if (zoom < 1.0f)
@@ -99,7 +78,6 @@ public:
     }
 
 private:
-    // Calculates the front vector from the Camera's (updated) Euler Angles.
     void updateCameraVectors() {
         glm::vec3 f;
         f.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));

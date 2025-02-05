@@ -36,6 +36,12 @@ void App::GLFWKeyCallback(GLFWwindow* window, int key, int scancode, int action,
 				glfwSetWindowPos(window, this_inst->windowX, this_inst->windowY);
 			}
 			break;
+		case GLFW_KEY_G:
+			this_inst->cameraDetached = !this_inst->cameraDetached;
+			if (!this_inst->cameraDetached && this_inst->player) {
+				this_inst->camera.position = this_inst->player->getHeadPosition();
+			}
+			break;
 		default:
 			break;
 		}
@@ -75,10 +81,8 @@ void App::GLFWMouseButtonCallback(GLFWwindow* window, int button, int action, in
 		case GLFW_MOUSE_BUTTON_LEFT: {
 			int mode = glfwGetInputMode(window, GLFW_CURSOR);
 			if (mode == GLFW_CURSOR_NORMAL) {
-				// we are aoutside of applicating, catch the cursor
 				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 			} else {
-				// we are inside our game: shoot, click, etc.
 				std::cout << "Bang!\n";
 			}
 			break;
