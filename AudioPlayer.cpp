@@ -36,6 +36,13 @@ AudioPlayer::~AudioPlayer() {
         delete kv.second;
     }
 
+    // clean rest of the active sounds
+    for (auto it = activeSounds.begin(); it != activeSounds.end();) {
+            ma_sound_uninit(*it);
+            delete* it;
+            it = activeSounds.erase(it);
+    }
+
     // uninitialize engine
     ma_engine_uninit(&engine);
 }
@@ -47,13 +54,16 @@ bool AudioPlayer::playSound3D(const std::string& name, float soundX, float sound
     // check if initialized
     if (!initialized) return false;
 
-    // get sound by name from the bank
-    auto it = soundBank.find(name);
-    if (it == soundBank.end()) {
-        std::cerr << "Sound '" << name << "' not found." << std::endl;
-        return false;
-    }
-    ma_sound* snd = it->second;
+    //// get sound by name from the bank
+    //auto it = soundBank.find(name);
+    //if (it == soundBank.end()) {
+    //    std::cerr << "Sound '" << name << "' not found." << std::endl;
+    //    return false;
+    //}
+    //ma_sound* snd = it->second;
+
+    // get sound copy from the bank
+    ma_sound* snd = getSoundFromBank(name);
 
     // reset playback to beginning
     ma_sound_seek_to_pcm_frame(snd, 0);
@@ -69,9 +79,33 @@ bool AudioPlayer::playSound3D(const std::string& name, float soundX, float sound
         std::cerr << "Failed to play sound: " << name << std::endl;
         return false;
     }
+
+    // add sound to active sounds
+    activeSounds.push_back(snd);
+
     std::cerr << name << " sound playing." << std::endl;
 
     return true;
+}
+
+/// <summary>
+/// Get copy of the sound from the sound bank
+/// </summary>
+ma_sound* AudioPlayer::getSoundFromBank(const std::string& name) {
+    auto it = soundBank.find(name);
+    if (it == soundBank.end()) {
+        std::cerr << "Sound '" << name << "' not found in sound bank." << std::endl;
+        return nullptr;
+    }
+
+    ma_sound* original = it->second;
+    ma_sound* soundCopy = new ma_sound;
+    if (ma_sound_init_copy(&engine, original, MA_SOUND_FLAG_ASYNC, nullptr, soundCopy) != MA_SUCCESS) {
+        std::cerr << "Failed to copy sound: " << name << std::endl;
+        delete soundCopy;
+        return nullptr;
+    }
+    return soundCopy;
 }
 
 /// <summary>
@@ -157,4 +191,20 @@ void AudioPlayer::setListenerPosition(float listX, float listY, float listZ, flo
     // set listener position, direction
     ma_engine_listener_set_position(&engine, 0, listX, listY, listZ);
     ma_engine_listener_set_direction(&engine, 0, listXDir, listYDir, listZDir);
+}
+
+/// <summary>
+/// Clean finished sounds.
+/// </summary>
+void AudioPlayer::cleanFinishedSounds() {
+    for (auto it = activeSounds.begin(); it != activeSounds.end();) {
+        if (!ma_sound_is_playing(*it)) {  // if sound finished playing
+            ma_sound_uninit(*it);
+            delete* it;
+            it = activeSounds.erase(it);
+        }
+        else {
+            ++it;
+        }
+    }
 }
