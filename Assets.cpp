@@ -105,7 +105,7 @@ Model Assets::createCube(float size, const glm::vec3& color, ShaderProgram& shad
 	m.meshes[0].diffuse_material = glm::vec4(color, 1.0f);
 	m.meshes[0].specular_material = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 
-	return Model(GL_TRIANGLES, vertices, indices, shader);
+	return m;
 }
 
 Model Assets::createTerrain(int gridSize, float heightScale, float frequency, ShaderProgram& shader) {
