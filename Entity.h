@@ -39,10 +39,50 @@ public:
         }
     }
 
+    bool moveTowards(const glm::vec3& destination, double speed, double deltaTime) {
+        glm::highp_dvec3 toTarget = destination - position;
+        double distance = glm::length(toTarget);
+        if (distance < 0.1f)
+            return true;
+
+        glm::highp_dvec3 direction = toTarget / distance;
+        position += direction * speed * deltaTime;
+
+		// skip when the entity is already at the destination
+		//if (distance < 0.1f)
+			//return false;
+
+		glm::highp_dvec3 flatDir = glm::normalize(glm::highp_dvec3(direction.x, 0.0, direction.z));
+        double targetYaw = glm::degrees(atan2(flatDir.x, flatDir.z));
+        orientation.y = lerpAngle(orientation.y, targetYaw, 0.1f);
+
+        return false;
+    }
+
+    void moveInCircle(const glm::vec3& center, float radius, float angularSpeed, float time) {
+        float angle = angularSpeed * time;
+        position.x = center.x + radius * cos(angle);
+        position.z = center.z + radius * sin(angle);
+		position.y = center.y + 2.0f * sin(2.0f * angle);
+
+        float targetYaw = glm::degrees(atan2(-sin(angle), cos(angle)));
+        orientation.y = targetYaw;
+    }
+
     virtual void draw() {
         if (model) {
             model->origin = position;
+			model->orientation = orientation;
             model->draw();
         }
+    }
+
+private:
+
+    double lerpAngle(double current, double target, double t) {
+        double diff = target - current;
+        while (diff < -180.0f) diff += 360.0f;
+        while (diff > 180.0f) diff -= 360.0f;
+        return current + diff * t;
     }
 };
