@@ -11,7 +11,7 @@ START = 100 points
 - [x]  event processing (camera, object, app behaviour...): mouse (both axes, wheel), keyboard
 - [x]  multiple different independently moving 3D models, at leats two loaded from file
 - [x]  at least three different textures (or subtextures from texture atlas etc.)
-- [ ]  lighting model, at least 3 lights (1x ambient, 1x directional, 1x reflector: at least one is moving; + possible other lights)
+- [x]  lighting model, at least 3 lights (1x ambient, 1x directional, 1x reflector: at least one is moving; + possible other lights)
 - [ ]  correct full scale transparency (at least one transparent object; NOT if(alpha<0.1) {discard;} )
 - [ ]  audio (better than just background)
 
