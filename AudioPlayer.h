@@ -2,24 +2,21 @@
 
 #include <string>
 #include "miniaudio.h"
-#include <vector>
+#include <map>
 
 class AudioPlayer {
 public:
     AudioPlayer();
     ~AudioPlayer();
 
-    bool playSound3D(ma_sound* sound);
-    bool playMissileExplosionSound(float x, float y, float z);
-    bool playMissileLaunchSound(float x, float y, float z);
-    bool playSneezeSound(float x, float y, float z);
-    void setListenerPosition(float x_pos, float y_pos, float z_pos, float x_dir, float y_dir, float z_dir);
-    ma_sound* loadSound(const std::string& filePath);
-    void update();
-    void cleanup();
+    bool playSound3D(const std::string& name, float soundX, float soundY, float soundZ, float listX, float listY, float listZ, float listXDir, float listYDir, float listZDir);
 
 private:
     ma_engine engine;
+    std::map<std::string, ma_sound*> soundBank;
     bool initialized;
-    std::vector<ma_sound*> activeSounds;
+
+    bool loadSound(const std::string& name, ma_sound* snd);
+    void loadSystemSounds();
+    void setListenerPosition(float listX, float listY, float listZ, float listXDir, float listYDir, float listZDir);
 };
