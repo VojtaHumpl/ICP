@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
+    <ClCompile Include="AudioPlayer.cpp" />
     <ClCompile Include="Assets.cpp" />
     <ClCompile Include="BoxCollider.cpp" />
     <ClCompile Include="callbacks.cpp" />
@@ -50,6 +51,7 @@
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="Assets.h" />
+    <ClInclude Include="AudioPlayer.h" />
     <ClInclude Include="BoxCollider.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Collider.h" />
@@ -67,6 +69,7 @@
     <ClInclude Include="imgui-docking\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="MiniAudio.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="PhysicsEntity.h" />
     <ClInclude Include="Player.h" />
