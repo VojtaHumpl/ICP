@@ -19,6 +19,7 @@
 #include <GLFW/glfw3.h>
 
 // OpenGL math
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -32,6 +33,12 @@
 #include "ShaderProgram.h"
 #include "Model.h"
 #include "Camera.h"
+#include "Player.h"
+#include "CollisionManager.h"
+#include "Entity.h"
+#include "TerrainEntity.h"
+#include "PhysicsEntity.h"
+#include "Light.h"
 
 
 class App {
@@ -55,14 +62,25 @@ private:
 	int prevWindowHeight = windowHeight;
 	bool isVsyncOn = true;
 	bool fullscreen = false;
+	GLuint lightsUBO;
 
 	bool showImgui = true;
 	float deltaTime = 0.0f;
 
-	Camera camera;
+	Player* player = nullptr;
 
-	std::vector<Model> models;
+	Camera camera;
+	bool cameraDetached = false;
+
+	LightsBlock lightsBlock;
+	/*DirectionalLight sunLight;
+	PointLight pointLight;
+	SpotLight spotLight;
+	SpotLight movingSpotLight;*/
+	
 	std::vector<ShaderProgram> shaders;
+	std::vector<Entity*> entities;
+	std::vector<PhysicsEntity*> physicsEntities;
 
 	cv::VideoCapture videoCapture;
 	ThreadSafeQueue<cv::Mat> frameQueue;

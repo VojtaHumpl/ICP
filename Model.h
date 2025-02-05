@@ -20,9 +20,9 @@ public:
 	glm::vec3 origin{};
 	glm::vec3 orientation{};
 
-	Model(std::vector<Vertex> const& vertices, std::vector<GLuint> const& indices, ShaderProgram& shader) {
+	Model(int primitiveType, std::vector<Vertex> const& vertices, std::vector<GLuint> const& indices, ShaderProgram& shader) {
 		Mesh mesh(
-			GL_TRIANGLES,
+			primitiveType,
 			shader,
 			vertices,
 			indices,
@@ -124,7 +124,7 @@ public:
 			}
 
 			glm::vec4 ambient(1.0f), diffuse(1.0f), specular(1.0f);
-			float reflectivity = 1.0f;
+			float shininess = 1.0f;
 			GLuint textureID = 0;
 
 			if (!shapes[s].mesh.material_ids.empty()) {
@@ -135,7 +135,7 @@ public:
 					ambient = glm::vec4(mat.ambient[0], mat.ambient[1], mat.ambient[2], 1.0f);
 					diffuse = glm::vec4(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2], 1.0f);
 					specular = glm::vec4(mat.specular[0], mat.specular[1], mat.specular[2], 1.0f);
-					reflectivity = mat.shininess;
+					shininess = mat.shininess;
 
 					if (!mat.diffuse_texname.empty()) {
 						std::string texPath = base_dir + mat.diffuse_texname;
@@ -157,12 +157,12 @@ public:
 			mesh.ambient_material = ambient;
 			mesh.diffuse_material = diffuse;
 			mesh.specular_material = specular;
-			mesh.reflectivity = reflectivity;
+			mesh.shininess = shininess;
 
 			/*mesh.ambient_material = glm::vec4(0.5f, 0.1f, 0.1f, 1.0f);
 			mesh.diffuse_material = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 			mesh.specular_material = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-			mesh.reflectivity = 32.0f;*/
+			mesh.shininess = 32.0f;*/
 
 			meshes.push_back(std::move(mesh));
 		}
