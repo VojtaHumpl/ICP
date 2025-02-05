@@ -2,11 +2,8 @@
 
 
 #include "App.h"
-#include "AudioPlayer.h"
 
 using namespace std;
-
-auto player = AudioPlayer();
 
 
 App::App() : camera(glm::vec3(0.0f, 0.0f, 3.0f)), threadPool(std::thread::hardware_concurrency()) {
