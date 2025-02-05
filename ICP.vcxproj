@@ -20,7 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
+    <ClCompile Include="Assets.cpp" />
+    <ClCompile Include="BoxCollider.cpp" />
     <ClCompile Include="callbacks.cpp" />
+    <ClCompile Include="CollisionManager.cpp" />
     <ClCompile Include="imgui-docking\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="imgui-docking\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="imgui-docking\imgui.cpp" />
@@ -31,6 +34,7 @@
     <ClCompile Include="imgui-docking\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
+    <ClCompile Include="SphereCollider.cpp" />
     <ClCompile Include="stb_image_impl.cpp" />
     <ClCompile Include="tiny_obj_loader_impl.cpp" />
   </ItemGroup>
@@ -46,7 +50,11 @@
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="Assets.h" />
+    <ClInclude Include="BoxCollider.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Collider.h" />
+    <ClInclude Include="CollisionManager.h" />
+    <ClInclude Include="Entity.h" />
     <ClInclude Include="imgui-docking\backends\imgui_impl_glfw.h" />
     <ClInclude Include="imgui-docking\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="imgui-docking\backends\imgui_impl_opengl3_loader.h" />
@@ -60,8 +68,12 @@
     <ClInclude Include="Light.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
+    <ClInclude Include="PhysicsEntity.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="ShaderProgram.h" />
+    <ClInclude Include="SphereCollider.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="TerrainEntity.h" />
     <ClInclude Include="ThreadPool.h" />
     <ClInclude Include="ThreadSafeQueue.h" />
     <ClInclude Include="tiny_obj_loader.h" />

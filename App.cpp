@@ -1,8 +1,6 @@
 ﻿// Author: Vojtěch Humpl & David Jansa
 
-
 #include "App.h"
-
 
 App::App() : camera(glm::vec3(0.0f, 0.0f, 3.0f)), threadPool(std::thread::hardware_concurrency()) {
 	//cout << "OpenCV: " << CV_VERSION << endl;
@@ -152,22 +150,47 @@ void App::initImgui() {
 }
 
 void App::initAssets() {
-
+	// shaders
 	ShaderProgram modelShader("modelVS.glsl", "modelFS.glsl");
 	shaders.push_back(std::move(modelShader));
 
-	Model testModel("resources/bunny10k_textured.obj", shaders[0], true);
-	testModel.origin = glm::vec3(0.0f, 0.0f, 0.0f);
-	testModel.orientation = glm::vec3(0.0f, 0.0f, 0.0f);
-	models.push_back(std::move(testModel));
+	// models
+	Model* rabbitModel = new Model("resources/bunny10k_textured.obj", shaders[0], true);
+	rabbitModel->origin = glm::vec3(0.0f, 0.0f, 0.0f);
+	rabbitModel->orientation = glm::vec3(0.0f, 0.0f, 0.0f);
+	Entity* rabbit = new Entity(rabbitModel, nullptr, glm::vec3(0.0f, 0.0f, 0.0f));
+	entities.push_back(rabbit);
+	//models.push_back(std::move(testModel));
 
-	Model grid = Assets::createGrid(10, shaders[0]);
-	models.push_back(std::move(grid));
+	Model* grid = new Model(Assets::createGrid(10, shaders[0]));
+	Entity* gridEntity = new Entity (grid, nullptr, glm::vec3(0.0f, 0.0f, 0.0f));
+	entities.push_back(gridEntity);
+	//models.push_back(std::move(grid));
 
-	Model terrain = Assets::createTerrain(15.f, 0.01f, shaders[0]);
-	models.push_back(std::move(terrain));
+	//Model terrain = Assets::createTerrain(100, 15.f, 0.01f, shaders[0]);
+	//models.push_back(std::move(terrain));
+	TerrainEntity* terrain = new TerrainEntity(100, 15.f, 0.01f, shaders[0]);
+	entities.push_back(terrain);
+
+	Model* cube = new Model(Assets::createCube(2.0f, shaders[0]));
+	//cube.origin = glm::vec3(10.0f, 1.0f, 0.0f);
+	BoxCollider* boxCollider = new BoxCollider(cube->origin, glm::vec3(2.0f));
+	gCollisionManager.addCollider(boxCollider);
+	Entity* cubeEntity = new Entity(cube, boxCollider, glm::vec3(10.0f, -2.0f, 0.0f), glm::vec3(2.0f));
+	entities.push_back(cubeEntity);
+	//models.push_back(std::move(cube));
+
+	Model* sphere = new Model(Assets::createSphere(1.0f, 20, 20, shaders[0]));
+	SphereCollider* sphereCollider = new SphereCollider(sphere->origin, 1.0f);
+	gCollisionManager.addCollider(sphereCollider);
+	Entity* sphereEntity = new Entity(sphere, sphereCollider, glm::vec3(10.0f, -2.0f, 2.0f), glm::vec3(1.0f));
+	entities.push_back(sphereEntity);
 
 	sunLight = Assets::createDirectionalLight(glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f), glm::vec4(0.5f, 0.5f, 0.5f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+	player = new Player(shaders[0], glm::vec3(0.0f, 5.0f, 0.0f));
+	player->affectedByGravity = true;
+	physicsEntities.push_back(player);
 }
 
 int App::run(void) {
@@ -192,18 +215,30 @@ int App::run(void) {
 
 		processInput(deltaTime);
 
+
+		for (auto& entity : physicsEntities) {
+			entity->update(deltaTime);
+		}
+
+		for (auto& entity : entities) {
+			entity->update(deltaTime);
+		}
+
+		//if (player)
+			//player->update(deltaTime);
+
 		if (showImgui) {
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
 			ImGui::NewFrame();
 			ImGui::SetNextWindowPos(ImVec2(10, 10));
-			ImGui::SetNextWindowSize(ImVec2(250, 100));
-
+			ImGui::SetNextWindowSize(ImVec2(250, 200));
 			ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 			ImGui::Text("V-Sync: %s", isVsyncOn ? "ON" : "OFF");
 			ImGui::Text("FPS: %.1f", FPS);
 			ImGui::Text("(press RMB to release mouse)");
 			ImGui::Text("(press I to show/hide info)");
+			ImGui::Text("(press G to detach/attach camera)");
 			ImGui::End();
 		}
 
@@ -222,12 +257,20 @@ int App::run(void) {
 		shaders[0].setUniform("dirLight.ambient", sunLight.ambient);
 		shaders[0].setUniform("dirLight.diffuse", sunLight.diffuse);
 		shaders[0].setUniform("dirLight.specular", sunLight.specular);
-		shaders[0].setUniform("ambientOcclusion", 0.1f);
+		shaders[0].setUniform("ambientOcclusion", 0.8f);
 
 		// RENDER: GL drawCalls
 
-		for (auto& model : models) {
+		/*for (auto& model : models) {
 			model.draw();
+		}*/
+
+		for (auto& entity: entities) {
+			entity->draw();
+		}
+
+		if (player) {
+			player->draw();
 		}
 
 
@@ -264,25 +307,46 @@ void App::processInput(float deltaTime) {
 		direction -= camera.right;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		direction += camera.right;
-	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-		direction += camera.worldUp;
-	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
-		direction -= camera.worldUp;
 
-	// normalize so diagonal movement isn't faster
+	if (cameraDetached) {
+		if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+			direction += camera.worldUp;
+		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
+			direction -= camera.worldUp;
+	}
+
+	// normalize so diagonal movement isnt faster
 	if (glm::length(direction) > 0.0f)
 		direction = glm::normalize(direction);
 
 	float speedMultiplier = 1.0f;
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
 		glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
-		speedMultiplier = 2.5f;  // Change this multiplier to adjust the boost factor.
+		speedMultiplier = 2.5f;
 	}
 
-	// Update the camera position. (movementSpeed is in units per second.)
-	camera.position += direction * camera.movementSpeed * deltaTime * speedMultiplier;
-}
+	if (cameraDetached) {
+		// detached: move the camera directly
+		camera.position += direction * camera.movementSpeed * deltaTime * speedMultiplier;
+	} else {
+		// attached: update the players position
+		if (player) {
+			glm::vec3 accel = direction * player->movementAcceleration * speedMultiplier;
+			accel.y = 0.0f;
+			player->velocity += accel * deltaTime;
 
+			if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+				if (player->isOnGround) {
+					player->velocity.y = player->jumpVelocity;
+					player->isOnGround = false;
+				}
+			}
+
+			//player->position += direction * camera.movementSpeed * deltaTime * speedMultiplier;
+			camera.position = player->getHeadPosition();
+		}
+	}
+}
 
 
 void App::cameraThreadFunction() {
@@ -665,10 +729,12 @@ void App::destroy(void) {
 	}
 	glfwTerminate();
 
-	for (auto& model : models) {
-		for (auto& mesh : model.meshes) {
-			mesh.clear();
-		}
+	for (auto& entity : entities) {
+		delete entity;
+	}
+
+	for (auto& entity : physicsEntities) {
+		delete entity;
 	}
 }
 
