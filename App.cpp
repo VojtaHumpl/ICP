@@ -186,6 +186,15 @@ void App::initAssets() {
 	Entity* sphereEntity = new Entity(sphere, sphereCollider, glm::vec3(10.0f, -2.0f, 2.0f), glm::vec3(1.0f));
 	entities.push_back(sphereEntity);
 
+	Model* sub = new Model("resources/sub.obj", shaders[0], true);
+	Entity* subEntity = new Entity(sub, nullptr, glm::vec3(10.0f, 20.0f, 10.0f));
+	entities.push_back(subEntity);
+
+	Model* skull = new Model("resources/skull.obj", shaders[0], true);
+	Entity* skullEntity = new Entity(skull, nullptr, glm::vec3(0.0f, 30.0f, -50.0f));
+	skullEntity->orientation = glm::vec3(-90.0f, 0.0f, 0.0f);
+	entities.push_back(skullEntity);
+
 	sunLight = Assets::createDirectionalLight(glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f), glm::vec4(0.5f, 0.5f, 0.5f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
 	player = new Player(shaders[0], glm::vec3(0.0f, 5.0f, 0.0f));
@@ -208,6 +217,7 @@ int App::run(void) {
 
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
+	int squareCorner = 0;
 	while (!glfwWindowShouldClose(window)) {
 		double now = glfwGetTime();
 		deltaTime = now - lastFrameTime;
@@ -215,6 +225,29 @@ int App::run(void) {
 
 		processInput(deltaTime);
 
+		//entities[5]->moveTowards(glm::vec3(100.0f, 20.0f, 100.0f), 20.0f, deltaTime);
+
+		// submarine
+		if (squareCorner == 0) {
+			if(entities[5]->moveTowards(glm::vec3(100.0f, 20.0f, 100.0f), 25.0f, deltaTime)) {
+				squareCorner = 1;
+			}
+		} else if (squareCorner == 1) {
+			if (entities[5]->moveTowards(glm::vec3(100.0f, 20.0f, 0.0f), 25.0f, deltaTime)) {
+				squareCorner = 2;
+			}
+		} else if (squareCorner == 2) {
+			if (entities[5]->moveTowards(glm::vec3(0.0f, 20.0f, 0.0f), 25.0f, deltaTime)) {
+				squareCorner = 3;
+			}
+		} else if (squareCorner == 3) {
+			if (entities[5]->moveTowards(glm::vec3(0.0f, 20.0f, 100.0f), 25.0f, deltaTime)) {
+				squareCorner = 0;
+			}
+		}
+
+		entities[0]->moveInCircle(glm::vec3(0.0f, 0.0f, 0.0f), 10.0f, 0.5f, now);
+		
 
 		for (auto& entity : physicsEntities) {
 			entity->update(deltaTime);
@@ -236,6 +269,7 @@ int App::run(void) {
 			ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 			ImGui::Text("V-Sync: %s", isVsyncOn ? "ON" : "OFF");
 			ImGui::Text("FPS: %.1f", FPS);
+			ImGui::Text("Camera position: %.1f, %.1f, %.1f", camera.position.x, camera.position.y, camera.position.z);
 			ImGui::Text("(press RMB to release mouse)");
 			ImGui::Text("(press I to show/hide info)");
 			ImGui::Text("(press G to detach/attach camera)");
