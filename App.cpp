@@ -11,7 +11,7 @@ void App::init(void) {
 		std::cout << "Current working directory: " << std::filesystem::current_path().generic_string() << '\n';
 
 		if (!std::filesystem::exists("dlls"))
-			throw std::runtime_error("Directory 'bin' not found. DLLs are expected to be there.");
+			throw std::runtime_error("Directory 'dlls' not found. DLLs are expected to be there.");
 
 		if (!std::filesystem::exists("resources"))
 			throw std::runtime_error("Directory 'resources' not found. Various media files are expected to be there.");
@@ -172,7 +172,7 @@ void App::initAssets() {
 	TerrainEntity* terrain = new TerrainEntity(100, 15.f, 0.01f, shaders[0]);
 	entities.push_back(terrain);
 
-	Model* cube = new Model(Assets::createCube(2.0f, shaders[0]));
+	Model* cube = new Model(Assets::createCube(2.0f, glm::vec3(0.89, 0.85, 0.173), shaders[0]));
 	//cube.origin = glm::vec3(10.0f, 1.0f, 0.0f);
 	BoxCollider* boxCollider = new BoxCollider(cube->origin, glm::vec3(2.0f));
 	gCollisionManager.addCollider(boxCollider);
@@ -195,7 +195,70 @@ void App::initAssets() {
 	skullEntity->orientation = glm::vec3(-90.0f, 0.0f, 0.0f);
 	entities.push_back(skullEntity);
 
-	sunLight = Assets::createDirectionalLight(glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f), glm::vec4(0.5f, 0.5f, 0.5f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+	Model* cube2 = new Model(Assets::createCube(2.0f, glm::vec3(0.89, 0.169, 0.792), shaders[0]));
+	BoxCollider* boxCollider2 = new BoxCollider(cube2->origin, glm::vec3(2.0f));
+	gCollisionManager.addCollider(boxCollider2);
+	Entity* cubeEntity2 = new Entity(cube2, boxCollider2, glm::vec3(10.0f, 0.0f, 20.0f), glm::vec3(2.0f));
+	entities.push_back(cubeEntity2);
+
+	//sunLight = Assets::createDirectionalLight(glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f), glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
+	//pointLight = Assets::createPointLight(glm::vec3(0.0f, 20.0f, 0.0f), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f), glm::vec4(0.5f, 0.5f, 0.5f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 1.0f, 0.09f, 0.032f);
+	//spotLight = Assets::createSpotLight(glm::vec3(10.0f, 20.0f, 20.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f), glm::vec4(0.5f, 0.5f, 0.5f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 1.0f, 0.09f, 0.032f, glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(15.0f)));
+	//movingSpotLight = Assets::createSpotLight(glm::vec3(0.0f, 20.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f), glm::vec4(0.5f, 0.5f, 0.5f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 1.0f, 0.09f, 0.032f, glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(15.0f)));
+
+	lightsBlock.numLights = 4;
+	// sunlight
+	lightsBlock.lights[0].type = 0;	// 0 == disabled
+	lightsBlock.lights[0].direction = glm::vec3(-0.2f, -1.0f, -0.3f);
+	lightsBlock.lights[0].padding2 = 0.0f;
+	lightsBlock.lights[0].ambient = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
+	lightsBlock.lights[0].diffuse = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
+	lightsBlock.lights[0].specular = glm::vec4(0.4f, 0.4f, 0.4f, 1.0f);
+	lightsBlock.lights[0].constant = 1.0f;
+	lightsBlock.lights[0].linear = 0.0f;
+	lightsBlock.lights[0].quadratic = 0.0f;
+	lightsBlock.lights[0].cutOff = 0.0f;
+	lightsBlock.lights[0].outerCutOff = 0.0f;
+
+	// point light
+	lightsBlock.lights[1].type = 2;
+	lightsBlock.lights[1].position = glm::vec3(0.0f, 20.0f, 0.0f);
+	lightsBlock.lights[1].ambient = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
+	lightsBlock.lights[1].diffuse = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	lightsBlock.lights[1].specular = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	lightsBlock.lights[1].constant = 1.0f;
+	lightsBlock.lights[1].linear = 0.09f;
+	lightsBlock.lights[1].quadratic = 0.032f;
+	lightsBlock.lights[1].cutOff = 0.0f;
+	lightsBlock.lights[1].outerCutOff = 0.0f;
+
+	// spot light
+	lightsBlock.lights[2].type = 3;
+	lightsBlock.lights[2].position = glm::vec3(10.0f, 20.0f, 20.0f);
+	lightsBlock.lights[2].direction = glm::vec3(0.0f, -1.0f, 0.0f);
+	lightsBlock.lights[2].ambient = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
+	lightsBlock.lights[2].diffuse = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	lightsBlock.lights[2].specular = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	lightsBlock.lights[2].constant = 1.0f;
+	lightsBlock.lights[2].linear = 0.09f;
+	lightsBlock.lights[2].quadratic = 0.032f;
+	lightsBlock.lights[2].cutOff = glm::cos(glm::radians(12.5f));
+	lightsBlock.lights[2].outerCutOff = glm::cos(glm::radians(15.0f));
+
+	// moving point light
+	lightsBlock.lights[3].type = 3;
+	lightsBlock.lights[3].position = glm::vec3(0.0f, 20.0f, 0.0f);
+	lightsBlock.lights[3].direction = glm::vec3(0.0f, -1.0f, 0.0f);
+	lightsBlock.lights[3].ambient = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
+	lightsBlock.lights[3].diffuse = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	lightsBlock.lights[3].specular = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	lightsBlock.lights[3].constant = 1.0f;
+	lightsBlock.lights[3].linear = 0.09f;
+	lightsBlock.lights[3].quadratic = 0.032f;
+	lightsBlock.lights[3].cutOff = 0.0f;
+	lightsBlock.lights[3].outerCutOff = 0.0f;
+	lightsBlock.lights[3].cutOff = glm::cos(glm::radians(12.5f));
+	lightsBlock.lights[3].outerCutOff = glm::cos(glm::radians(15.0f));
 
 	player = new Player(shaders[0], glm::vec3(0.0f, 5.0f, 0.0f));
 	player->affectedByGravity = true;
@@ -210,12 +273,21 @@ int App::run(void) {
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+	glGenBuffers(1, &lightsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(LightsBlock), nullptr, GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
 	double lastFrameTime = glfwGetTime();
 	double fps_last_displayed = lastFrameTime;
 	int fps_counter_frames = 0;
 	double FPS = 0.0;
 
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+
+	std::cout << "Size of Light in C++: " << sizeof(Light) << std::endl;
+	std::cout << "Size of LightsBlock in C++: " << sizeof(LightsBlock) << std::endl;
 
 	int squareCorner = 0;
 	while (!glfwWindowShouldClose(window)) {
@@ -247,7 +319,13 @@ int App::run(void) {
 		}
 
 		entities[0]->moveInCircle(glm::vec3(0.0f, 0.0f, 0.0f), 10.0f, 0.5f, now);
+
+		float radius = 10.0f;
+		lightsBlock.lights[3].position = glm::vec3(radius * cos(now), 20.0f, radius * sin(now));
 		
+		glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(LightsBlock), &lightsBlock);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 		for (auto& entity : physicsEntities) {
 			entity->update(deltaTime);
@@ -287,11 +365,37 @@ int App::run(void) {
 		shaders[0].setUniform("projection", projection);
 		shaders[0].setUniform("view", view);
 		shaders[0].setUniform("viewPos", camera.position);
+
+		
+
+		/*shaders[0].setUniform("useDirLight", true);
 		shaders[0].setUniform("dirLight.direction", sunLight.direction);
 		shaders[0].setUniform("dirLight.ambient", sunLight.ambient);
 		shaders[0].setUniform("dirLight.diffuse", sunLight.diffuse);
 		shaders[0].setUniform("dirLight.specular", sunLight.specular);
-		shaders[0].setUniform("ambientOcclusion", 0.8f);
+
+		shaders[0].setUniform("usePointLight", true);
+		shaders[0].setUniform("pointLight.position", pointLight.position);
+		shaders[0].setUniform("pointLight.ambient", pointLight.ambient);
+		shaders[0].setUniform("pointLight.diffuse", pointLight.diffuse);
+		shaders[0].setUniform("pointLight.specular", pointLight.specular);
+		shaders[0].setUniform("pointLight.constant", pointLight.constant);
+		shaders[0].setUniform("pointLight.linear", pointLight.linear);
+		shaders[0].setUniform("pointLight.quadratic", pointLight.quadratic);
+
+		shaders[0].setUniform("useSpotLight", true);
+		shaders[0].setUniform("spotLight.position", spotLight.position);
+		shaders[0].setUniform("spotLight.direction", spotLight.direction);
+		shaders[0].setUniform("spotLight.ambient", spotLight.ambient);
+		shaders[0].setUniform("spotLight.diffuse", spotLight.diffuse);
+		shaders[0].setUniform("spotLight.specular", spotLight.specular);
+		shaders[0].setUniform("spotLight.constant", spotLight.constant);
+		shaders[0].setUniform("spotLight.linear", spotLight.linear);
+		shaders[0].setUniform("spotLight.quadratic", spotLight.quadratic);
+		shaders[0].setUniform("spotLight.cutOff", spotLight.cutOff);
+		shaders[0].setUniform("spotLight.outerCutOff", spotLight.outerCutOff);*/
+
+		shaders[0].setUniform("ambientOcclusion", 0.2f);
 
 		// RENDER: GL drawCalls
 

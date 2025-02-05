@@ -111,8 +111,8 @@ public:
 		// Set material properties
 		shader.setUniform("material.ambient", ambient_material);
 		shader.setUniform("material.diffuse", diffuse_material);
-		//shader.setUniform("material.specular", specular_material);
-		//shader.setUniform("material.shininess", shininess);
+		shader.setUniform("material.specular", specular_material);
+		shader.setUniform("material.shininess", shininess);
 
 		// Bind texture if available
 		if (texture_id > 0) {

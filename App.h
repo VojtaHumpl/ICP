@@ -38,6 +38,7 @@
 #include "Entity.h"
 #include "TerrainEntity.h"
 #include "PhysicsEntity.h"
+#include "Light.h"
 
 
 class App {
@@ -61,6 +62,7 @@ private:
 	int prevWindowHeight = windowHeight;
 	bool isVsyncOn = true;
 	bool fullscreen = false;
+	GLuint lightsUBO;
 
 	bool showImgui = true;
 	float deltaTime = 0.0f;
@@ -70,8 +72,12 @@ private:
 	Camera camera;
 	bool cameraDetached = false;
 
-	DirectionalLight sunLight;
-	//std::vector<Model> models;
+	LightsBlock lightsBlock;
+	/*DirectionalLight sunLight;
+	PointLight pointLight;
+	SpotLight spotLight;
+	SpotLight movingSpotLight;*/
+	
 	std::vector<ShaderProgram> shaders;
 	std::vector<Entity*> entities;
 	std::vector<PhysicsEntity*> physicsEntities;
