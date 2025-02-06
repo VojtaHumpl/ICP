@@ -40,8 +40,8 @@ AudioPlayer::~AudioPlayer() {
 
     // clean rest of the active sounds
     for (auto it = activeSounds.begin(); it != activeSounds.end();) {
-            ma_sound_uninit(*it);
-            delete* it;
+            ma_sound_uninit(it->soundPtr);
+            delete it->soundPtr;
             it = activeSounds.erase(it);
     }
 
@@ -83,11 +83,21 @@ bool AudioPlayer::playSound3D(const std::string& name, float soundX, float sound
     }
 
     // add sound to active sounds
-    activeSounds.push_back(snd);
+    activeSounds.push_back({ name, snd });
 
     std::cerr << name << " sound playing." << std::endl;
 
     return true;
+}
+
+bool AudioPlayer::playSound3DOnce(const std::string& name, float soundX, float soundY, float soundZ, float listX, float listY, float listZ, float listXDir, float listYDir, float listZDir) {
+    if (!initialized) return false;
+
+    if (isSoundActive(name)) {
+        return false;
+    }
+    
+	return playSound3D(name, soundX, soundY, soundZ, listX, listY, listZ, listXDir, listYDir, listZDir);
 }
 
 /// <summary>
@@ -200,9 +210,9 @@ void AudioPlayer::setListenerPosition(float listX, float listY, float listZ, flo
 /// </summary>
 void AudioPlayer::cleanFinishedSounds() {
     for (auto it = activeSounds.begin(); it != activeSounds.end();) {
-        if (!ma_sound_is_playing(*it)) {  // if sound finished playing
-            ma_sound_uninit(*it);
-            delete* it;
+        if (!ma_sound_is_playing(it->soundPtr)) {  // if sound finished playing
+            ma_sound_uninit(it->soundPtr);
+            delete it->soundPtr;
             it = activeSounds.erase(it);
         }
         else {
@@ -210,4 +220,16 @@ void AudioPlayer::cleanFinishedSounds() {
         }
     }
 	std::cout << "Cleaned finished sounds" << std::endl;
+}
+
+bool AudioPlayer::isSoundActive(const std::string& name) {
+    for (auto& active : activeSounds) {
+        if (active.name == name) {
+            // If the sound is still playing, return true
+            if (ma_sound_is_playing(active.soundPtr)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
