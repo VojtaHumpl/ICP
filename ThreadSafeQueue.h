@@ -22,7 +22,7 @@ public:
 
 	bool pop(T& item) {
 		std::unique_lock<std::mutex> lock(mutex_);
-		cond_var_.wait(lock, [this] { return !queue_.empty(); });
+		cond_var_.wait(lock, [this] { return stop_ || !queue_.empty(); });
 		if (queue_.empty())
 			return false;
 
@@ -42,7 +42,16 @@ public:
 		return queue_.empty();
 	}
 
+	void stop() {
+		{
+			std::lock_guard<std::mutex> lock(mutex_);
+			stop_ = true;
+		}
+		cond_var_.notify_all();
+	}
+
 private:
+	bool stop_;
 	std::queue<T> queue_;
 	mutable std::mutex mutex_;
 	std::condition_variable cond_var_;

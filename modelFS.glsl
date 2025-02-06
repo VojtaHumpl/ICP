@@ -93,4 +93,5 @@ void main() {
     }
 
     FragColor = finalColor;
+    FragColor.a = diffuseColor.a;
 }

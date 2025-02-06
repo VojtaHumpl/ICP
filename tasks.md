@@ -4,7 +4,7 @@ START = 100 points
 
 ## ESSENTIALS: Each missing (non-functional) Essential = -25 points (partial functionality => partial decrement)
 
-- [ ]  realtime 2D raster processing = tracker, threads (can be separate project)
+- [?]  realtime 2D raster processing = tracker, threads (can be separate project)
 - [x]  3D GL Core profile + shaders version 4.6, GL debug 
 - [x]  high performance => at least 60 FPS
 - [x]  allow VSync control, fullscreen vs. windowed switching (restore window position & size)
@@ -12,8 +12,8 @@ START = 100 points
 - [x]  multiple different independently moving 3D models, at leats two loaded from file
 - [x]  at least three different textures (or subtextures from texture atlas etc.)
 - [x]  lighting model, at least 3 lights (1x ambient, 1x directional, 1x reflector: at least one is moving; + possible other lights)
-- [ ]  correct full scale transparency (at least one transparent object; NOT if(alpha<0.1) {discard;} )
-- [ ]  audio (better than just background)
+- [x]  correct full scale transparency (at least one transparent object; NOT if(alpha<0.1) {discard;} )
+- [x]  audio (better than just background)
 
 ## EXTRAS: Each working Extra = +10 points
 

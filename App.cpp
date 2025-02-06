@@ -57,7 +57,7 @@ void App::initOpenCV() {
 
 		videoCapture = cv::VideoCapture(0, cv::CAP_MSMF);
 		if (!videoCapture.isOpened()) {
-			//throw runtime_error("Can not open camera");
+			//throw runtime_error("Cannot open camera");
 		}
 
 		threadPool.enqueue(&App::cameraRedThreadFunction, this);
@@ -178,7 +178,7 @@ void App::initAssets() {
 	TerrainEntity* terrain = new TerrainEntity(100, 15.f, 0.01f, shaders[0]);
 	entities.push_back(terrain);
 
-	Model* cube = new Model(Assets::createCube(2.0f, glm::vec3(0.89, 0.85, 0.173), shaders[0]));
+	Model* cube = new Model(Assets::createCube(2.0f, glm::vec4(0.89f, 0.85f, 0.173f, 1.0f), shaders[0]));
 	//cube.origin = glm::vec3(10.0f, 1.0f, 0.0f);
 	BoxCollider* boxCollider = new BoxCollider(cube->origin, glm::vec3(2.0f));
 	gCollisionManager.addCollider(boxCollider);
@@ -201,11 +201,17 @@ void App::initAssets() {
 	skullEntity->orientation = glm::vec3(-90.0f, 0.0f, 0.0f);
 	entities.push_back(skullEntity);
 
-	Model* cube2 = new Model(Assets::createCube(2.0f, glm::vec3(0.89, 0.169, 0.792), shaders[0]));
+	Model* cube2 = new Model(Assets::createCube(2.0f, glm::vec4(0.89f, 0.169f, 0.792f, 0.4f), shaders[0]));
 	BoxCollider* boxCollider2 = new BoxCollider(cube2->origin, glm::vec3(2.0f));
 	gCollisionManager.addCollider(boxCollider2);
 	Entity* cubeEntity2 = new Entity(cube2, boxCollider2, glm::vec3(10.0f, 0.0f, 20.0f), glm::vec3(2.0f));
 	entities.push_back(cubeEntity2);
+
+	Model* cube3 = new Model(Assets::createCube(2.0f, glm::vec4(0.314f, 0.525f, 0.831f, 0.4f), shaders[0]));
+	BoxCollider* boxCollider3 = new BoxCollider(cube3->origin, glm::vec3(2.0f));
+	gCollisionManager.addCollider(boxCollider3);
+	Entity* cubeEntity3 = new Entity(cube3, boxCollider3, glm::vec3(10.0f, 0.0f, 23.0f), glm::vec3(2.0f));
+	entities.push_back(cubeEntity3);
 
 	//sunLight = Assets::createDirectionalLight(glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f), glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
 	//pointLight = Assets::createPointLight(glm::vec3(0.0f, 20.0f, 0.0f), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f), glm::vec4(0.5f, 0.5f, 0.5f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 1.0f, 0.09f, 0.032f);
@@ -214,11 +220,11 @@ void App::initAssets() {
 
 	lightsBlock.numLights = 4;
 	// sunlight
-	lightsBlock.lights[0].type = 0;	// 0 == disabled
+	lightsBlock.lights[0].type = 1;	// 0 == disabled, 1 == directional, 2 == point, 3 == spot
 	lightsBlock.lights[0].direction = glm::vec3(-0.2f, -1.0f, -0.3f);
 	lightsBlock.lights[0].padding2 = 0.0f;
-	lightsBlock.lights[0].ambient = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-	lightsBlock.lights[0].diffuse = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
+	lightsBlock.lights[0].ambient = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
+	lightsBlock.lights[0].diffuse = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
 	lightsBlock.lights[0].specular = glm::vec4(0.4f, 0.4f, 0.4f, 1.0f);
 	lightsBlock.lights[0].constant = 1.0f;
 	lightsBlock.lights[0].linear = 0.0f;
@@ -278,6 +284,8 @@ int App::run(void) {
 	//glDisable(GL_CULL_FACE);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glGenBuffers(1, &lightsUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
@@ -341,9 +349,6 @@ int App::run(void) {
 			entity->update(deltaTime);
 		}
 
-		//if (player)
-			//player->update(deltaTime);
-
 		if (showImgui) {
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
@@ -372,50 +377,41 @@ int App::run(void) {
 		shaders[0].setUniform("view", view);
 		shaders[0].setUniform("viewPos", camera.position);
 
-		
-
-		/*shaders[0].setUniform("useDirLight", true);
-		shaders[0].setUniform("dirLight.direction", sunLight.direction);
-		shaders[0].setUniform("dirLight.ambient", sunLight.ambient);
-		shaders[0].setUniform("dirLight.diffuse", sunLight.diffuse);
-		shaders[0].setUniform("dirLight.specular", sunLight.specular);
-
-		shaders[0].setUniform("usePointLight", true);
-		shaders[0].setUniform("pointLight.position", pointLight.position);
-		shaders[0].setUniform("pointLight.ambient", pointLight.ambient);
-		shaders[0].setUniform("pointLight.diffuse", pointLight.diffuse);
-		shaders[0].setUniform("pointLight.specular", pointLight.specular);
-		shaders[0].setUniform("pointLight.constant", pointLight.constant);
-		shaders[0].setUniform("pointLight.linear", pointLight.linear);
-		shaders[0].setUniform("pointLight.quadratic", pointLight.quadratic);
-
-		shaders[0].setUniform("useSpotLight", true);
-		shaders[0].setUniform("spotLight.position", spotLight.position);
-		shaders[0].setUniform("spotLight.direction", spotLight.direction);
-		shaders[0].setUniform("spotLight.ambient", spotLight.ambient);
-		shaders[0].setUniform("spotLight.diffuse", spotLight.diffuse);
-		shaders[0].setUniform("spotLight.specular", spotLight.specular);
-		shaders[0].setUniform("spotLight.constant", spotLight.constant);
-		shaders[0].setUniform("spotLight.linear", spotLight.linear);
-		shaders[0].setUniform("spotLight.quadratic", spotLight.quadratic);
-		shaders[0].setUniform("spotLight.cutOff", spotLight.cutOff);
-		shaders[0].setUniform("spotLight.outerCutOff", spotLight.outerCutOff);*/
 
 		shaders[0].setUniform("ambientOcclusion", 0.2f);
 
-		// RENDER: GL drawCalls
-
-		/*for (auto& model : models) {
-			model.draw();
-		}*/
-
-		for (auto& entity: entities) {
-			entity->draw();
-		}
 
 		if (player) {
 			player->draw();
 		}
+		
+		for (auto& entity : entities) {
+			if (entity->transparent)
+				transparentEntities.push_back(entity);
+			else
+				opaqueEntities.push_back(entity);
+		}
+
+		for (auto& entity : opaqueEntities) {
+			entity->draw();
+		}
+
+		std::sort(transparentEntities.begin(), transparentEntities.end(),
+			[&](Entity* a, Entity* b) {
+				float distA = glm::distance2(a->position, camera.position);
+				float distB = glm::distance2(b->position, camera.position);
+				return distA > distB; // want farthest first
+			}
+		);
+
+		glDepthMask(GL_FALSE);
+		for (auto& entity : transparentEntities) {
+			entity->draw();
+		}
+		glDepthMask(GL_TRUE);
+
+		transparentEntities.clear();
+		opaqueEntities.clear();
 
 
 		if (showImgui) {
@@ -503,6 +499,7 @@ void App::cameraRedThreadFunction() {
 		}
 		frameQueue.push(frame);
 	}
+	frameQueue.stop();
 }
 
 void App::processingRedThreadFunction() {
@@ -890,6 +887,7 @@ void App::printInfoGL() {
 
 void App::destroy(void) {
 	stopSignal = true;
+	std::this_thread::sleep_for(std::chrono::milliseconds(200));
 	frameQueue.clear();
 	displayQueue.clear();
 	encodeQueue.clear();
@@ -919,6 +917,8 @@ void App::destroy(void) {
 	for (auto& entity : physicsEntities) {
 		delete entity;
 	}
+
+	gAudioPlayer.cleanFinishedSounds();
 }
 
 App::~App() {
