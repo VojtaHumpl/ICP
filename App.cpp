@@ -482,8 +482,14 @@ void App::processInput(float deltaTime) {
 				}
 			}
 
-			//player->position += direction * camera.movementSpeed * deltaTime * speedMultiplier;
-			camera.position = player->getHeadPosition();
+			float behindDistance = 1.0f;
+			float heightOffset = 0.5f;
+
+			glm::vec3 headPos = player->getHeadPosition();
+			glm::vec3 behindPos = headPos - camera.front * behindDistance;
+			behindPos.y += heightOffset;
+
+			camera.position = behindPos;
 		}
 	}
 }
