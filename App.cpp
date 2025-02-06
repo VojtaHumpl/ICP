@@ -1,12 +1,10 @@
 ﻿// Author: Vojtěch Humpl & David Jansa
 
 #include "App.h"
-#include "AudioPlayer.h"
+
 
 
 using namespace std;
-
-auto player = AudioPlayer();
 
 App::App() : camera(glm::vec3(0.0f, 0.0f, 3.0f)), threadPool(std::thread::hardware_concurrency()) {
 	//cout << "OpenCV: " << CV_VERSION << endl;
@@ -451,12 +449,6 @@ void App::processInput(float deltaTime) {
 		direction -= camera.right;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		direction += camera.right;
-	if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS) {
-		player.playSound3D("SNEEZE", camera.position.x + 10, camera.position.y, camera.position.z, camera.position.x, camera.position.y, camera.position.z, 0.0f, 0.0f, -1.0f);
-	}
-	if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
-		player.cleanFinishedSounds();
-	}
 
 
 	if (cameraDetached) {

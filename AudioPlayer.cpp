@@ -4,6 +4,8 @@
 #include <iostream>
 #include <stdexcept>
 
+AudioPlayer gAudioPlayer;
+
 /// <summary>
 /// AudioPlayer constructor.
 /// </summary>
@@ -207,4 +209,5 @@ void AudioPlayer::cleanFinishedSounds() {
             ++it;
         }
     }
+	std::cout << "Cleaned finished sounds" << std::endl;
 }

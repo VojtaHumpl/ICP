@@ -39,6 +39,7 @@
 #include "TerrainEntity.h"
 #include "PhysicsEntity.h"
 #include "Light.h"
+#include "AudioPlayer.h"
 
 
 class App {
@@ -73,10 +74,6 @@ private:
 	bool cameraDetached = false;
 
 	LightsBlock lightsBlock;
-	/*DirectionalLight sunLight;
-	PointLight pointLight;
-	SpotLight spotLight;
-	SpotLight movingSpotLight;*/
 	
 	std::vector<ShaderProgram> shaders;
 	std::vector<Entity*> entities;

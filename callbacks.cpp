@@ -42,6 +42,14 @@ void App::GLFWKeyCallback(GLFWwindow* window, int key, int scancode, int action,
 				this_inst->camera.position = this_inst->player->getHeadPosition();
 			}
 			break;
+		case GLFW_KEY_U:
+			if (this_inst->player) {
+				gAudioPlayer.playSound3D("SNEEZE", this_inst->camera.position.x + 10, this_inst->camera.position.y, this_inst->camera.position.z, this_inst->camera.position.x, this_inst->camera.position.y, this_inst->camera.position.z, 0.0f, 0.0f, -1.0f);
+			}
+			break;
+		case GLFW_KEY_P:
+			gAudioPlayer.cleanFinishedSounds();
+			break;
 		default:
 			break;
 		}

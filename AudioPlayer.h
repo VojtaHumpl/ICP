@@ -24,3 +24,5 @@ private:
     void setListenerPosition(float listX, float listY, float listZ, float listXDir, float listYDir, float listZDir);
     ma_sound* getSoundFromBank(const std::string& name);
 };
+
+extern AudioPlayer gAudioPlayer;
