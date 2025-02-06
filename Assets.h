@@ -25,7 +25,7 @@ private:
 public:
 
 	static Model createGrid(int gridSize, ShaderProgram& shader);
-	static Model createCube(float size, const glm::vec3& color, ShaderProgram& shader);
+	static Model createCube(float size, const glm::vec4& color, ShaderProgram& shader);
 	static Model createTerrain(int gridSize, float heightScale, float frequency, ShaderProgram& shader);
 	static float getTerrainHeightAtPosition(float worldX, float worldZ);
 	static Model createSphere(float radius, int sectorCount, int stackCount, ShaderProgram& shader);

@@ -55,7 +55,7 @@ Model Assets::createGrid(int gridSize, ShaderProgram& shader) {
 	return Model(GL_LINES, gridVertices, gridIndices, shader);
 }
 
-Model Assets::createCube(float size, const glm::vec3& color, ShaderProgram& shader) {
+Model Assets::createCube(float size, const glm::vec4& color, ShaderProgram& shader) {
 	float halfSize = size / 2.0f;
 	std::vector<Vertex> vertices = {
 		// Front face (normal (0,0,1))
@@ -101,8 +101,8 @@ Model Assets::createCube(float size, const glm::vec3& color, ShaderProgram& shad
 
 	Model m = Model(GL_TRIANGLES, vertices, indices, shader);
 
-	m.meshes[0].ambient_material = glm::vec4(color, 1.0f);
-	m.meshes[0].diffuse_material = glm::vec4(color, 1.0f);
+	m.meshes[0].ambient_material = color;
+	m.meshes[0].diffuse_material = color;
 	m.meshes[0].specular_material = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 
 	return m;

@@ -79,6 +79,8 @@ private:
 	LightsBlock lightsBlock;
 	
 	std::vector<ShaderProgram> shaders;
+	std::vector<Entity*> transparentEntities;
+	std::vector<Entity*> opaqueEntities;
 	std::vector<Entity*> entities;
 	std::vector<PhysicsEntity*> physicsEntities;
 

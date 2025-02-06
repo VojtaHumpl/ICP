@@ -10,6 +10,7 @@ public:
     glm::vec3 position;
     glm::vec3 orientation;
     glm::vec3 scale;
+	bool transparent = false;
 
     // Components
     Model* model;
@@ -29,6 +30,16 @@ public:
 
 
     virtual void update(float deltaTime) {
+        if (model) {
+			if (model->meshes[0].ambient_material.a < 1.0f) {
+				transparent = true;
+			} else if (model->meshes[0].diffuse_material.a < 1.0f) {
+                transparent = true;
+            } else {
+				transparent = false;
+            }
+        }
+
         // sync collider with position
         if (collider) {
             if (SphereCollider* sphere = dynamic_cast<SphereCollider*>(collider)) {
