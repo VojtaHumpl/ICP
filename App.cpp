@@ -359,6 +359,7 @@ int App::run(void) {
 			ImGui::Text("V-Sync: %s", isVsyncOn ? "ON" : "OFF");
 			ImGui::Text("FPS: %.1f", FPS);
 			ImGui::Text("Camera position: %.1f, %.1f, %.1f", camera.position.x, camera.position.y, camera.position.z);
+			ImGui::Text("Red detected: %s", redDetected.load(std::memory_order_relaxed) ? "YES" : "NO");
 			ImGui::Text("(press RMB to release mouse)");
 			ImGui::Text("(press I to show/hide info)");
 			ImGui::Text("(press G to detach/attach camera)");
@@ -461,7 +462,7 @@ void App::processInput(float deltaTime) {
 		direction = glm::normalize(direction);
 
 	float speedMultiplier = 1.0f;
-	if ((glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) && redDetected.load(std::memory_order_relaxed)) {
+	if ((glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) || redDetected.load(std::memory_order_relaxed)) {
 		speedMultiplier = 2.5f;
 	}
 
