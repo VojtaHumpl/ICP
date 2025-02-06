@@ -9,6 +9,7 @@
 #include "SphereCollider.h"
 #include "BoxCollider.h"
 #include "CollisionManager.h"
+#include "AudioPlayer.h"
 
 class Player : public PhysicsEntity {
 public:
@@ -60,6 +61,7 @@ public:
 
 		std::vector<Collider*> collisions = gCollisionManager.checkCollisions(collider);
 		for (auto col : collisions) {
+			gAudioPlayer.playSound3DOnce("EXPLOSION", position.x, position.y, position.z, position.x, position.y, position.z, 0.0f, 0.0f, -1.0f);
 			if (BoxCollider* box = dynamic_cast<BoxCollider*>(col)) {
 				glm::vec3 minBound = box->center - box->halfExtents;
 				glm::vec3 maxBound = box->center + box->halfExtents;
