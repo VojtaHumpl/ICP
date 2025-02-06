@@ -8,6 +8,7 @@
 #include <numeric>
 #include <future>
 #include <filesystem>
+#include <atomic>
 
 // OpenCV 
 #include <opencv2\opencv.hpp>
@@ -65,6 +66,8 @@ private:
 	bool fullscreen = false;
 	GLuint lightsUBO;
 
+	std::atomic<bool> redDetected{ false };
+
 	bool showImgui = true;
 	float deltaTime = 0.0f;
 
@@ -115,6 +118,10 @@ private:
 	void GUIThreadFunction();
 	void encodeThreadFunction();
 	void decodeThreadFunction();
+
+	bool findRed(const cv::Mat& img);
+	void cameraRedThreadFunction();
+	void processingRedThreadFunction();
 
 	
 	//callbacks

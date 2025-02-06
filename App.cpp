@@ -60,6 +60,8 @@ void App::initOpenCV() {
 			//throw runtime_error("Can not open camera");
 		}
 
+		threadPool.enqueue(&App::cameraRedThreadFunction, this);
+		threadPool.enqueue(&App::processingRedThreadFunction, this);
 		//threadPool.enqueue(&App::cameraThreadFunction, this);
 		//threadPool.enqueue(&App::processingThreadFunction, this);
 		//threadPool.enqueue(&App::GUIThreadFunction, this);
@@ -463,8 +465,7 @@ void App::processInput(float deltaTime) {
 		direction = glm::normalize(direction);
 
 	float speedMultiplier = 1.0f;
-	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-		glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
+	if ((glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) && redDetected.load(std::memory_order_relaxed)) {
 		speedMultiplier = 2.5f;
 	}
 
@@ -489,6 +490,45 @@ void App::processInput(float deltaTime) {
 			camera.position = player->getHeadPosition();
 		}
 	}
+}
+
+void App::cameraRedThreadFunction() {
+	cv::Mat frame;
+	while (!stopSignal) {
+		videoCapture.read(frame);
+		if (frame.empty() && displayQueue.empty()) {
+			std::cerr << "Camera disconnected or end of stream.\n";
+			stopSignal = true;
+			break;
+		}
+		frameQueue.push(frame);
+	}
+}
+
+void App::processingRedThreadFunction() {
+	cv::Mat frame;
+	while (!stopSignal) {
+		if (frameQueue.pop(frame)) {
+			if (frame.empty()) {
+				continue;
+			}
+			bool isRed = findRed(frame);
+			// save to atomic
+			redDetected.store(isRed, std::memory_order_relaxed);
+		}
+	}
+}
+
+bool App::findRed(const cv::Mat& img) {
+	cv::Mat hsv;
+	cv::cvtColor(img, hsv, cv::COLOR_BGR2HSV);
+
+	cv::Mat mask1, mask2;
+	cv::inRange(hsv, cv::Scalar(0, 100, 100), cv::Scalar(10, 255, 255), mask1);
+	cv::inRange(hsv, cv::Scalar(170, 100, 100), cv::Scalar(180, 255, 255), mask2);
+
+	cv::Mat redMask = mask1 | mask2;
+	return cv::countNonZero(redMask) > 0;
 }
 
 
