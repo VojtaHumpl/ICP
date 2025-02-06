@@ -14,8 +14,8 @@ void App::init(void) {
 	try {
 		std::cout << "Current working directory: " << std::filesystem::current_path().generic_string() << '\n';
 
-		if (!std::filesystem::exists("dlls"))
-			throw std::runtime_error("Directory 'dlls' not found. DLLs are expected to be there.");
+		//if (!std::filesystem::exists("dlls"))
+			//throw std::runtime_error("Directory 'dlls' not found. DLLs are expected to be there.");
 
 		if (!std::filesystem::exists("resources"))
 			throw std::runtime_error("Directory 'resources' not found. Various media files are expected to be there.");
