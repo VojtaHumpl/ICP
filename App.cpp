@@ -304,6 +304,8 @@ int App::run(void) {
 	std::cout << "Size of LightsBlock in C++: " << sizeof(LightsBlock) << std::endl;
 
 	int squareCorner = 0;
+	float cube1Alpha = 0.5f;
+	float cube2Alpha = 0.5f;
 	while (!glfwWindowShouldClose(window)) {
 		double now = glfwGetTime();
 		deltaTime = now - lastFrameTime;
@@ -354,17 +356,22 @@ int App::run(void) {
 			ImGui_ImplGlfw_NewFrame();
 			ImGui::NewFrame();
 			ImGui::SetNextWindowPos(ImVec2(10, 10));
-			ImGui::SetNextWindowSize(ImVec2(250, 200));
+			ImGui::SetNextWindowSize(ImVec2(250, 220));
 			ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 			ImGui::Text("V-Sync: %s", isVsyncOn ? "ON" : "OFF");
 			ImGui::Text("FPS: %.1f", FPS);
 			ImGui::Text("Camera position: %.1f, %.1f, %.1f", camera.position.x, camera.position.y, camera.position.z);
 			ImGui::Text("Red detected: %s", redDetected.load(std::memory_order_relaxed) ? "YES" : "NO");
+			ImGui::SliderFloat("Cube1 alpha", &cube1Alpha, 0.0f, 1.0f);
+			ImGui::SliderFloat("Cube2 alpha", &cube2Alpha, 0.0f, 1.0f);
 			ImGui::Text("(press RMB to release mouse)");
 			ImGui::Text("(press I to show/hide info)");
 			ImGui::Text("(press G to detach/attach camera)");
 			ImGui::End();
 		}
+
+		entities[7]->setAlpha(cube1Alpha);
+		entities[8]->setAlpha(cube2Alpha);
 
 		//double time_speed = showImgui ? 0.0 : 1.0;
 
@@ -483,8 +490,14 @@ void App::processInput(float deltaTime) {
 				}
 			}
 
-			//player->position += direction * camera.movementSpeed * deltaTime * speedMultiplier;
-			camera.position = player->getHeadPosition();
+			float behindDistance = 1.0f;
+			float heightOffset = 0.5f;
+
+			glm::vec3 headPos = player->getHeadPosition();
+			glm::vec3 behindPos = headPos - camera.front * behindDistance;
+			behindPos.y += heightOffset;
+
+			camera.position = behindPos;
 		}
 	}
 }

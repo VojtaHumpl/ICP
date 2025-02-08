@@ -80,6 +80,12 @@ public:
         orientation.y = targetYaw;
     }
 
+	void setAlpha(float alpha) {
+		if (model) {
+			model->setAlpha(alpha);
+		}
+	}
+
     virtual void draw() {
         if (model) {
             model->origin = position;

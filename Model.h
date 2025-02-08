@@ -168,6 +168,13 @@ public:
 		}
 	}
 
+	void setAlpha(float alpha) {
+		for (auto& mesh : meshes) {
+			mesh.ambient_material.a = alpha;
+			mesh.diffuse_material.a = alpha;
+		}
+	}
+
 	// update position etc. based on running time
 	void update(const float delta_t) {
 		// origin += glm::vec3(3,0,0) * delta_t; s=s0+v*dt

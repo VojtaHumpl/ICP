@@ -84,6 +84,10 @@ void App::GLFWWindowPosCallback(GLFWwindow* window, int xpos, int ypos) {
 }
 
 void App::GLFWMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+	if (ImGui::GetIO().WantCaptureMouse) {
+		return;
+	}
+
 	if (action == GLFW_PRESS) {
 		switch (button) {
 		case GLFW_MOUSE_BUTTON_LEFT: {
