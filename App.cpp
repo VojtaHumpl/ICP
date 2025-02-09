@@ -3,8 +3,6 @@
 #include "App.h"
 
 
-using namespace std;
-
 App::App() : camera(glm::vec3(0.0f, 0.0f, 3.0f)), threadPool(std::thread::hardware_concurrency()) {
 	//cout << "OpenCV: " << CV_VERSION << endl;
 }
