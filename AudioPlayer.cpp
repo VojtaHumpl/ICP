@@ -67,6 +67,9 @@ bool AudioPlayer::playSound3D(const std::string& name, float soundX, float sound
     // get sound copy from the bank
     ma_sound* snd = getSoundFromBank(name);
 
+    // set sound volume
+    ma_sound_set_volume(snd, 0.5 * this->volume);
+
     // reset playback to beginning
     ma_sound_seek_to_pcm_frame(snd, 0);
 
@@ -151,7 +154,6 @@ void AudioPlayer::loadSystemSounds() {
         // set sound parameters
         ma_sound_set_min_distance(explosion, 0.5f);
         ma_sound_set_max_distance(explosion, 200.0f);
-        ma_sound_set_volume(explosion, 2.0f);
 
         // load the sound into the bank
         loadSound("EXPLOSION", explosion);
@@ -167,7 +169,6 @@ void AudioPlayer::loadSystemSounds() {
         // set sound parameters
         ma_sound_set_min_distance(launch, 0.5f);
         ma_sound_set_max_distance(launch, 100.0f);
-        ma_sound_set_volume(launch, 2.0f);
 
         // load the sound into the bank
         loadSound("LAUNCH", launch);
@@ -183,7 +184,6 @@ void AudioPlayer::loadSystemSounds() {
         // set sound parameters
         ma_sound_set_min_distance(sneeze, 0.5f);
         ma_sound_set_max_distance(sneeze, 30.0);
-        ma_sound_set_volume(sneeze, 1.0f);
 
         // load the sound into the bank
         loadSound("SNEEZE", sneeze);
@@ -232,4 +232,8 @@ bool AudioPlayer::isSoundActive(const std::string& name) {
         }
     }
     return false;
+}
+
+void AudioPlayer::setVolume(float volume) {
+    this->volume = volume;
 }

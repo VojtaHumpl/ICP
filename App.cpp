@@ -303,6 +303,7 @@ int App::run(void) {
 	int squareCorner = 0;
 	float cube1Alpha = 0.5f;
 	float cube2Alpha = 0.5f;
+	float audioVolume = 0.2f;
 	while (!glfwWindowShouldClose(window)) {
 		double now = glfwGetTime();
 		deltaTime = now - lastFrameTime;
@@ -372,11 +373,15 @@ int App::run(void) {
 			ImGui::Text("Red detected: %s", redDetected.load(std::memory_order_relaxed) ? "YES" : "NO");
 			ImGui::SliderFloat("Cube1 alpha", &cube1Alpha, 0.0f, 1.0f);
 			ImGui::SliderFloat("Cube2 alpha", &cube2Alpha, 0.0f, 1.0f);
+			ImGui::SliderFloat("Volume", &audioVolume, 0.0f, 1.0f);
 			ImGui::Text("(press RMB to release mouse)");
 			ImGui::Text("(press I to show/hide info)");
 			ImGui::Text("(press G to detach/attach camera)");
 			ImGui::End();
 		}
+
+		// set audio volume
+		gAudioPlayer.setVolume(audioVolume);
 
 		entities[7]->setAlpha(cube1Alpha);
 		entities[8]->setAlpha(cube2Alpha);
