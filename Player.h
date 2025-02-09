@@ -10,6 +10,9 @@
 #include "BoxCollider.h"
 #include "CollisionManager.h"
 #include "AudioPlayer.h"
+#include "ParticleSystem.h"
+#include "ParticleEntity.h"
+
 
 class Player : public PhysicsEntity {
 public:
@@ -30,7 +33,7 @@ public:
 		if (model) {
 			playerModel = model;
 		} else {
-			playerModel = new Model(Assets::createSphere(radius, 20, 20, shader));
+			playerModel = new Model(Assets::createSphere(radius, 20, 20, glm::vec4(1, 1, 1, 1), shader));
 			collider = new SphereCollider(this->position, radius * 2);
 			gCollisionManager.addCollider(collider);
 		}
@@ -61,7 +64,10 @@ public:
 
 		std::vector<Collider*> collisions = gCollisionManager.checkCollisions(collider);
 		for (auto col : collisions) {
-			gAudioPlayer.playSound3DOnce("EXPLOSION", position.x, position.y, position.z, position.x, position.y, position.z, 0.0f, 0.0f, -1.0f);
+			if (gAudioPlayer.playSound3DOnce("EXPLOSION", position.x, position.y, position.z, position.x, position.y, position.z, 0.0f, 0.0f, -1.0f)) {
+				ParticleSystem::spawnParticles(position, 15, playerModel->meshes[0].shader);
+			}
+
 			if (BoxCollider* box = dynamic_cast<BoxCollider*>(col)) {
 				glm::vec3 minBound = box->center - box->halfExtents;
 				glm::vec3 maxBound = box->center + box->halfExtents;

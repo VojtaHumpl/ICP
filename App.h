@@ -41,6 +41,7 @@
 #include "PhysicsEntity.h"
 #include "Light.h"
 #include "AudioPlayer.h"
+#include "ParticleEntity.h"
 
 
 class App {

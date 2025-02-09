@@ -18,7 +18,7 @@ START = 100 points
 ## EXTRAS: Each working Extra = +10 points
 
 - [x]  height map textured by height, proper player height coords
-- [ ]  particles
+- [x]  particles
 - [ ]  scripting (useful)
 - [x]  correct collisions
 - [ ]  some other nice complicated effect...

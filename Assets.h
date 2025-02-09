@@ -28,7 +28,7 @@ public:
 	static Model createCube(float size, const glm::vec4& color, ShaderProgram& shader);
 	static Model createTerrain(int gridSize, float heightScale, float frequency, ShaderProgram& shader);
 	static float getTerrainHeightAtPosition(float worldX, float worldZ);
-	static Model createSphere(float radius, int sectorCount, int stackCount, ShaderProgram& shader);
+	static Model createSphere(float radius, int sectorCount, int stackCount, const glm::vec4& color, ShaderProgram& shader);
 
 	//static SpotLight createSpotLight(glm::vec3 position, glm::vec3 direction, glm::vec4 ambient, glm::vec4 diffuse, glm::vec4 specular, float constant, float linear, float quadratic, float cutOff, float outerCutOff);
 	//static PointLight createPointLight(glm::vec3 position, glm::vec4 ambient, glm::vec4 diffuse, glm::vec4 specular, float constant, float linear, float quadratic);

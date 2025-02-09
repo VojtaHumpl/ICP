@@ -188,43 +188,7 @@ float Assets::getTerrainHeightAtPosition(float x, float z) {
 	return fractalPerlin(glm::vec2(gridX, gridZ) * terrainFrequency, octaves, lacunarity, persistence) * terrainHeightScale;
 }
 
-/*DirectionalLight Assets::createDirectionalLight(glm::vec3 direction, glm::vec4 ambient, glm::vec4 diffuse, glm::vec4 specular) {
-	DirectionalLight light;
-	light.direction = direction;
-	light.ambient = ambient;
-	light.diffuse = diffuse;
-	light.specular = specular;
-	return light;
-}
-
-PointLight Assets::createPointLight(glm::vec3 position, glm::vec4 ambient, glm::vec4 diffuse, glm::vec4 specular, float constant, float linear, float quadratic) {
-	PointLight light;
-	light.position = position;
-	light.ambient = ambient;
-	light.diffuse = diffuse;
-	light.specular = specular;
-	light.constant = constant;
-	light.linear = linear;
-	light.quadratic = quadratic;
-	return light;
-}
-
-SpotLight Assets::createSpotLight(glm::vec3 position, glm::vec3 direction, glm::vec4 ambient, glm::vec4 diffuse, glm::vec4 specular, float constant, float linear, float quadratic, float cutOff, float outerCutOff) {
-	SpotLight light;
-	light.position = position;
-	light.direction = direction;
-	light.ambient = ambient;
-	light.diffuse = diffuse;
-	light.specular = specular;
-	light.constant = constant;
-	light.linear = linear;
-	light.quadratic = quadratic;
-	light.cutOff = cutOff;
-	light.outerCutOff = outerCutOff;
-	return light;
-}*/
-
-Model Assets::createSphere(float radius, int sectorCount, int stackCount, ShaderProgram& shader) {
+Model Assets::createSphere(float radius, int sectorCount, int stackCount, const glm::vec4& color, ShaderProgram& shader) {
 	std::vector<Vertex> vertices;
 	std::vector<GLuint> indices;
 
@@ -266,5 +230,10 @@ Model Assets::createSphere(float radius, int sectorCount, int stackCount, Shader
 		}
 	}
 
-	return Model(GL_TRIANGLES, vertices, indices, shader);
+	Model m = Model(GL_TRIANGLES, vertices, indices, shader);
+	m.meshes[0].ambient_material = color;
+	m.meshes[0].diffuse_material = color;
+	m.meshes[0].specular_material = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+
+	return m;
 }

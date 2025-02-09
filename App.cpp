@@ -3,9 +3,6 @@
 #include "App.h"
 
 
-
-using namespace std;
-
 App::App() : camera(glm::vec3(0.0f, 0.0f, 3.0f)), threadPool(std::thread::hardware_concurrency()) {
 	//cout << "OpenCV: " << CV_VERSION << endl;
 }
@@ -186,7 +183,7 @@ void App::initAssets() {
 	entities.push_back(cubeEntity);
 	//models.push_back(std::move(cube));
 
-	Model* sphere = new Model(Assets::createSphere(1.0f, 20, 20, shaders[0]));
+	Model* sphere = new Model(Assets::createSphere(1.0f, 20, 20, glm::vec4(1, 0, 0, 1), shaders[0]));
 	SphereCollider* sphereCollider = new SphereCollider(sphere->origin, 1.0f);
 	gCollisionManager.addCollider(sphereCollider);
 	Entity* sphereEntity = new Entity(sphere, sphereCollider, glm::vec3(10.0f, -2.0f, 2.0f), glm::vec3(1.0f));
@@ -351,6 +348,17 @@ int App::run(void) {
 			entity->update(deltaTime);
 		}
 
+		for (auto it = ParticleSystem::particles.begin(); it != ParticleSystem::particles.end();) {
+			ParticleEntity* p = *it;
+			p->update(deltaTime);
+			if (p->lifetime <= 0.0f) {
+				delete* it;
+				it = ParticleSystem::particles.erase(it);
+			} else {
+				++it;
+			}
+		}
+
 		if (showImgui) {
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
@@ -402,6 +410,10 @@ int App::run(void) {
 
 		for (auto& entity : opaqueEntities) {
 			entity->draw();
+		}
+
+		for (auto& particle : ParticleSystem::particles) {
+			particle->draw();
 		}
 
 		std::sort(transparentEntities.begin(), transparentEntities.end(),
@@ -546,16 +558,16 @@ bool App::findRed(const cv::Mat& img) {
 void App::cameraThreadFunction() {
 	cv::Mat frame;
 
-    while (!stopSignal) {
+	while (!stopSignal) {
 		auto start = std::chrono::high_resolution_clock::now();
 
-        videoCapture.read(frame);
-        if (frame.empty() && displayQueue.empty()) {
+		videoCapture.read(frame);
+		if (frame.empty() && displayQueue.empty()) {
 			std::cerr << "Camera disconnected or end of stream.\n";
-            stopSignal = true;
-            break;
-        }
-        frameQueue.push(frame);
+			stopSignal = true;
+			break;
+		}
+		frameQueue.push(frame);
 
 		displayQueue.push(std::make_tuple(frame, "Original Frame"));
 		encodeQueue.push(frame);
@@ -702,13 +714,13 @@ std::vector<uchar> App::lossyLimitBW(cv::Mat& input_img, size_t size_limit) {
 
 std::vector<uchar> App::lossyLimitQuality(cv::Mat& input_img, float target_quality) {
 	std::string suff(".jpg"); // Target format
-    if (!cv::haveImageWriter(suff))
-        throw std::runtime_error("Cannot compress to format: " + suff);
+	if (!cv::haveImageWriter(suff))
+		throw std::runtime_error("Cannot compress to format: " + suff);
 
 	std::vector<int> compression_params = { cv::IMWRITE_JPEG_QUALITY, 95 };
 
-    std::vector<uchar> best_bytes;
-    int best_quality = -1;
+	std::vector<uchar> best_bytes;
+	int best_quality = -1;
 
 	std::vector<int> qualities(100);
 	std::iota(qualities.begin(), qualities.end(), 1);
@@ -767,15 +779,15 @@ cv::Mat App::threshold(const cv::Mat& img, const double h_low, const double s_lo
 }
 
 cv::Point2f App::findObject(const cv::Mat& img) {
-    // First range for red hue
-    cv::Mat img_threshold1 = threshold(img, 0, 100, 100, 10, 255, 255);
+	// First range for red hue
+	cv::Mat img_threshold1 = threshold(img, 0, 100, 100, 10, 255, 255);
 
-    // Second range for red hue
-    cv::Mat img_threshold2 = threshold(img, 170, 100, 100, 180, 255, 255);
+	// Second range for red hue
+	cv::Mat img_threshold2 = threshold(img, 170, 100, 100, 180, 255, 255);
 
-    // Combine both ranges
-    cv::Mat img_threshold;
-    cv::bitwise_or(img_threshold1, img_threshold2, img_threshold);
+	// Combine both ranges
+	cv::Mat img_threshold;
+	cv::bitwise_or(img_threshold1, img_threshold2, img_threshold);
 
 	// find contours
 	std::vector<std::vector<cv::Point>> contours;
