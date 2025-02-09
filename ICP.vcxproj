@@ -71,6 +71,8 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MiniAudio.h" />
     <ClInclude Include="Model.h" />
+    <ClInclude Include="ParticleEntity.h" />
+    <ClInclude Include="ParticleSystem.h" />
     <ClInclude Include="PhysicsEntity.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="ShaderProgram.h" />
